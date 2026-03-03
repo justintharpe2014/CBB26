@@ -1,0 +1,3372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>College Basketball Dynasty Sim (Offline)</title>
+  <style>
+    :root{
+      --bg:#0a0f16; --text:#eaf2ff; --muted:#a8bbd6;
+      --line:#263a55;
+      --good:#4ee08a; --warn:#ffd166; --bad:#ff5d5d;
+      --accent:#63b3ff; --accent2:#b58cff; --accent3:#7CFFB2;
+      --shadow: 0 14px 34px rgba(0,0,0,.38); --radius:14px;
+      --safeTop: env(safe-area-inset-top, 0px); --safeBot: env(safe-area-inset-bottom, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(99,179,255,.17), transparent 60%),
+        radial-gradient(900px 700px at 85% 0%, rgba(181,140,255,.13), transparent 55%),
+        radial-gradient(900px 800px at 40% 90%, rgba(124,255,178,.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+      overflow-x:hidden;
+    }
+
+    /* ===== Mobile-first: no horizontal scroll anywhere ===== */
+    html, body { overflow-x: hidden; }
+    main, .card, .list, .itemCard { max-width: 100%; }
+
+    header{
+      position:sticky; top:0; z-index:60;
+      background: linear-gradient(180deg, rgba(10,15,22,.96), rgba(10,15,22,.78));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(38,58,85,.65);
+      padding: calc(6px + var(--safeTop)) 10px 6px;
+    }
+    .topRow{display:flex; gap:10px; align-items:center; justify-content:space-between; max-width:1120px; margin:0 auto;}
+    .leftHdr{display:flex; align-items:center; gap:10px; min-width:0}
+    .brand{display:flex; flex-direction:column; gap:1px; min-width:0}
+    .brand .title{font-weight:950; letter-spacing:.4px; font-size:13px; display:flex; align-items:center; gap:8px; white-space:nowrap;}
+    .pill{
+      padding:2px 7px;
+      border:1px solid rgba(99,179,255,.40);
+      background: rgba(99,179,255,.12);
+      border-radius:999px;
+      font-size:10px; color:var(--accent); font-weight:900;
+    }
+    .sub{
+      color:var(--muted); font-size:11px; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width: 64vw;
+    }
+    .topActions{display:flex; gap:8px; align-items:center; justify-content:flex-end; flex:0 0 auto;}
+
+    button{
+      border:1px solid rgba(38,58,85,.92);
+      background: linear-gradient(180deg, rgba(18,28,43,.97), rgba(15,22,32,.95));
+      color:var(--text);
+      border-radius:12px; padding:9px 10px;
+      font-weight:900; font-size:12px;
+      cursor:pointer; box-shadow: 0 8px 18px rgba(0,0,0,.16); user-select:none;
+      transition: transform .05s ease, border-color .15s ease, filter .15s ease;
+      touch-action: manipulation;
+      white-space:nowrap;
+    }
+    button:hover{ border-color: rgba(99,179,255,.65); }
+    button:active{ transform: translateY(1px); }
+    button:disabled{opacity:.45; cursor:not-allowed; filter:saturate(.6);}
+    .btnAccent{border-color: rgba(99,179,255,.68); background: linear-gradient(180deg, rgba(99,179,255,.22), rgba(15,22,32,.95));}
+    .btnGood{border-color: rgba(78,224,138,.58); background: linear-gradient(180deg, rgba(78,224,138,.18), rgba(15,22,32,.95));}
+    .btnDanger{border-color: rgba(255,93,93,.58); background: linear-gradient(180deg, rgba(255,93,93,.18), rgba(15,22,32,.95));}
+    .btnWarn{border-color: rgba(255,209,102,.55); background: linear-gradient(180deg, rgba(255,209,102,.14), rgba(15,22,32,.95));}
+    .iconBtn{
+      width:40px; height:40px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:12px;
+    }
+
+    main{
+      max-width:1120px;
+      margin:0 auto;
+      padding:12px 12px calc(18px + var(--safeBot));
+    }
+    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:12px;}
+    @media (max-width: 920px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background: linear-gradient(180deg, rgba(18,28,43,.92), rgba(12,18,26,.92));
+      border:1px solid rgba(38,58,85,.82);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding:12px;
+    }
+    .card h2{margin:0 0 8px; font-size:14px; letter-spacing:.35px;}
+    .muted{color:var(--muted)}
+    .sep{height:1px; background:rgba(38,58,85,.75); margin:10px 0;}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .rowBetween{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+    .chip{
+      background: rgba(22,36,55,.92);
+      border:1px solid rgba(38,58,85,.82);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px; font-weight:900;
+      display:inline-flex; gap:6px; align-items:center;
+    }
+    .chip .k{color:var(--muted); font-weight:950; font-size:11px; letter-spacing:.2px;}
+
+    input,select,textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(38,58,85,.92);
+      background: rgba(10,14,19,.78);
+      color:var(--text);
+      padding:10px;
+      outline:none;
+      font-size:13px;
+    }
+    label{font-size:12px; color:var(--muted); font-weight:950; display:block; margin:8px 0 6px;}
+    .hint{font-size:11px; color:var(--muted); margin-top:6px; line-height:1.28;}
+    .badge{
+      padding:3px 8px; border-radius:999px;
+      font-size:11px; font-weight:950;
+      border:1px solid rgba(38,58,85,.88);
+      background: rgba(22,36,55,.75);
+      display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .bGood{border-color: rgba(78,224,138,.52); color: rgba(170,255,212,1); background: rgba(78,224,138,.11);}
+    .bBad{border-color: rgba(255,93,93,.52); color: rgba(255,182,182,1); background: rgba(255,93,93,.10);}
+    .bWarn{border-color: rgba(255,209,102,.52); color: rgba(255,241,192,1); background: rgba(255,209,102,.12);}
+    .bAcc{border-color: rgba(99,179,255,.62); color: rgba(200,230,255,1); background: rgba(99,179,255,.12);}
+    .bAcc2{border-color: rgba(181,140,255,.62); color: rgba(230,212,255,1); background: rgba(181,140,255,.12);}
+    .progress{height:10px; border-radius:999px; border:1px solid rgba(38,58,85,.88); background: rgba(10,14,19,.82); overflow:hidden;}
+    .bar{height:100%; width:0%; background: linear-gradient(90deg, rgba(99,179,255,.95), rgba(181,140,255,.95));}
+
+    .toasts{position:fixed; top: calc(52px + var(--safeTop)); right: 10px; z-index: 90; display:flex; flex-direction:column; gap:8px; max-width: 92vw; pointer-events:none;}
+    .toast{pointer-events:none; background: rgba(18,28,43,.92); border:1px solid rgba(38,58,85,.92); border-left:5px solid rgba(99,179,255,.85); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.25; max-width: 440px;}
+    .toast.good{border-left-color: rgba(78,224,138,.92);}
+    .toast.bad{border-left-color: rgba(255,93,93,.92);}
+    .toast.warn{border-left-color: rgba(255,209,102,.92);}
+    .toast .t{font-weight:950; margin-bottom:2px;}
+    .toast .s{color:var(--muted);}
+
+    .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width: 640px){ .twoCol{grid-template-columns:1fr;} .sub{max-width:56vw} }
+    .right{text-align:right;}
+    .mini{font-size:11px}
+
+    /* Modal */
+    .overlay{
+      position:fixed; inset:0; z-index:140;
+      background: rgba(0,0,0,.58);
+      backdrop-filter: blur(6px);
+      display:flex; align-items:center; justify-content:center;
+      padding: 14px;
+    }
+    .modal{
+      width:min(660px, 96vw);
+      border-radius: 18px;
+      border:1px solid rgba(38,58,85,.92);
+      box-shadow: 0 20px 80px rgba(0,0,0,.55);
+      background:
+        radial-gradient(900px 300px at 10% 0%, rgba(99,179,255,.22), transparent 55%),
+        radial-gradient(900px 300px at 90% 0%, rgba(181,140,255,.18), transparent 55%),
+        linear-gradient(180deg, rgba(18,28,43,.96), rgba(12,18,26,.96));
+      padding: 14px;
+      max-height: calc(92vh - var(--safeTop) - var(--safeBot));
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .hero{
+      border-radius: 14px;
+      border:1px solid rgba(99,179,255,.42);
+      background: linear-gradient(90deg, rgba(99,179,255,.20), rgba(181,140,255,.18));
+      padding: 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .hero .big{font-size: 15px; font-weight: 1000; letter-spacing:.2px; line-height:1.15;}
+    .hero .subt{font-size: 12px; font-weight: 950; color: rgba(255,241,192,1);}
+    .hero .logo{font-size: 28px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));}
+
+    /* Drawer */
+    .drawerOverlay{
+      position:fixed; inset:0; z-index:120;
+      background: rgba(0,0,0,.42);
+      backdrop-filter: blur(6px);
+      display:none;
+    }
+    .drawerOverlay.open{display:block;}
+    .drawer{
+      position:fixed; top:0; left:0;
+      height:100%;
+      width:min(320px, 86vw);
+      padding: calc(10px + var(--safeTop)) 12px 12px;
+      background: linear-gradient(180deg, rgba(18,28,43,.98), rgba(12,18,26,.98));
+      border-right:1px solid rgba(38,58,85,.82);
+      box-shadow: 24px 0 80px rgba(0,0,0,.55);
+      transform: translateX(-105%);
+      transition: transform .18s ease;
+      display:flex; flex-direction:column; gap:10px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .drawerOverlay.open .drawer{transform: translateX(0);}
+    .drawerHdr{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .drawerTitle{font-weight:1000; letter-spacing:.3px;}
+    .navList{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+    .navItem{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(38,58,85,.86);
+      background: rgba(18,28,43,.62);
+      color:var(--muted);
+      cursor:pointer; user-select:none; touch-action: manipulation;
+    }
+    .navItem .l{display:flex; align-items:center; gap:10px; font-weight:950; color:inherit;}
+    .navItem.active{color:var(--text); border-color: rgba(99,179,255,.68); background: rgba(99,179,255,.12);}
+
+    @media (max-width: 520px){
+      .hideOnPhone{display:none !important;}
+      .sub{max-width:56vw}
+    }
+
+    /* Card lists everywhere */
+    .list{display:flex; flex-direction:column; gap:10px;}
+    .itemCard{
+      border-radius: 14px;
+      border: 1px solid rgba(38,58,85,.82);
+      background: linear-gradient(180deg, rgba(18,28,43,.82), rgba(12,18,26,.82));
+      padding: 10px;
+    }
+    .itemTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .itemTitle{
+      font-weight: 1000;
+      line-height: 1.15;
+      font-size: 13px;
+    }
+    .itemMeta{
+      margin-top:4px;
+      display:flex; flex-wrap:wrap; gap:6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .itemStats{
+      margin-top:8px;
+      display:flex; flex-wrap:wrap; gap:8px;
+    }
+    .statPill{
+      border:1px solid rgba(38,58,85,.82);
+      background: rgba(22,36,55,.65);
+      border-radius: 999px;
+      padding: 5px 8px;
+      font-size: 11px;
+      font-weight: 900;
+      color: var(--text);
+      display:inline-flex; gap:6px; align-items:center;
+    }
+    .statPill .k{color:var(--muted); font-weight: 950; font-size:10px;}
+    .actionLine{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+    .divider{height:1px; background: rgba(38,58,85,.70); margin:10px 0;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="topRow">
+    <div class="leftHdr">
+      <button class="iconBtn" data-act="drawer_open" aria-label="Menu">☰</button>
+      <div class="brand">
+        <div class="title">🏀 College Basketball Dynasty <span class="pill">OFFLINE</span></div>
+        <div class="sub" id="subLine">Loading…</div>
+      </div>
+    </div>
+
+    <div class="topActions">
+      <button class="btnAccent" data-act="advance">Advance</button>
+      <button class="hideOnPhone" data-act="sim">Sim</button>
+      <button class="hideOnPhone btnGood" data-act="save">Save</button>
+    </div>
+  </div>
+</header>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="drawerOverlay" id="drawer">
+  <div class="drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="drawerHdr">
+      <div class="drawerTitle">Menu</div>
+      <button class="iconBtn" data-act="drawer_close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="card" style="padding:10px; background:rgba(18,28,43,.55)">
+      <div class="row" style="gap:8px">
+        <button class="btnAccent" style="flex:1" data-act="advance">Advance</button>
+        <button style="flex:1" data-act="sim">Sim</button>
+      </div>
+      <div class="row" style="gap:8px; margin-top:8px">
+        <button class="btnGood" style="flex:1" data-act="save">Save</button>
+        <button class="btnDanger" style="flex:1" data-act="hard_reset">Reset</button>
+      </div>
+      <div class="hint">All tabs live here. No bottom bar = clean scroll.</div>
+    </div>
+
+    <div class="navList" id="navList"></div>
+  </div>
+</div>
+
+<main id="app"></main>
+<div id="overlayRoot"></div>
+
+<script>
+/* ==========================================================
+   FINAL BUILD — College Basketball Dynasty (Offline)
+   ✅ Full career loop: season → conf tourney → selection → NCAA → offseason → next year
+   ✅ All screens are stacked cards (no horizontal scrolling)
+   ✅ Recruiting offer bug fixed (offer sync + robust offer detection)
+   ✅ Projected scholarships (open now + graduating seniors − commits)
+   ✅ Bottom-25 start rule (first job must be bottom 25 by prestige)
+========================================================== */
+
+const U = {
+  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+  rint:(a,b)=>Math.floor(a + Math.random()*(b-a+1)),
+  pick:(arr)=>arr[Math.floor(Math.random()*arr.length)],
+  uuid:()=> (crypto?.randomUUID ? crypto.randomUUID() : ("id"+Math.random().toString(16).slice(2)+Date.now())),
+  deepCopy:(o)=>JSON.parse(JSON.stringify(o)),
+  safe:(s)=> (s??"").toString().replace(/[<>&"]/g, m=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;", "\"":"&quot;" }[m])),
+  fmt:(n)=> (n??0).toLocaleString(),
+};
+
+function toast(title, msg, type=""){
+  const wrap = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast " + (type||"");
+  el.innerHTML = `<div class="t">${U.safe(title)}</div><div class="s">${U.safe(msg)}</div>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(-6px)"; }, 3400);
+  setTimeout(()=>{ el.remove(); }, 4100);
+}
+
+/* ---------- IndexedDB KV ---------- */
+const STORE = (() => {
+  const DB_NAME = "cbb_dynasty_db";
+  const STORE_NAME = "kv";
+  let dbPromise = null;
+
+  function openDB(){
+    if(dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve)=>{
+      if(!("indexedDB" in window)) return resolve(null);
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+    return dbPromise;
+  }
+
+  async function idbGet(key){
+    const db = await openDB();
+    if(!db) return null;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.get(key);
+      rq.onsuccess = () => resolve(rq.result ?? null);
+      rq.onerror = () => resolve(null);
+    });
+  }
+
+  async function idbSet(key, val){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.put(val, key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+
+  async function idbDel(key){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.delete(key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+
+  function lsGet(key){ try{ return JSON.parse(localStorage.getItem(key)); }catch(e){ return null; } }
+  function lsSet(key,val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; } }
+  function lsDel(key){ try{ localStorage.removeItem(key); return true; }catch(e){ return false; } }
+
+  return {
+    async get(key){ const v = await idbGet(key); return v ?? lsGet(key); },
+    async set(key,val){ const ok = await idbSet(key,val); return ok || lsSet(key,val); },
+    async del(key){ const ok = await idbDel(key); return ok || lsDel(key); },
+  };
+})();
+
+/* ---------- Config ---------- */
+const GAME = {
+  SAVE_KEY: "cbb_dynasty_SAVE_FINAL",
+  MAX_SCHOLARSHIPS: 13,
+  REG_WEEKS: 15,
+  GAMES_PER_WEEK: 2,
+  CONF_TOURNEY_WEEK: 16,
+  SELECTION_SUNDAY_WEEK: 17,
+  NCAA_START_WEEK: 18,
+  NCAA_ROUNDS: 6,
+  OFFSEASON_WEEKS: 4,
+  RECRUIT_POOL: 320,
+  PORTAL_POOL: 160,
+  POS: ["PG","SG","SF","PF","C"],
+  STATES: ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"],
+};
+function weekName(weekIndex){
+  if(weekIndex===0) return "Preseason";
+  if(weekIndex>=1 && weekIndex<=GAME.REG_WEEKS) return `Week ${weekIndex} (2 Games)`;
+  if(weekIndex===GAME.CONF_TOURNEY_WEEK) return "Conference Tournaments";
+  if(weekIndex===GAME.SELECTION_SUNDAY_WEEK) return "Selection Sunday";
+  if(weekIndex>=GAME.NCAA_START_WEEK && weekIndex<GAME.NCAA_START_WEEK+GAME.NCAA_ROUNDS){
+    const r = weekIndex - GAME.NCAA_START_WEEK;
+    return ["NCAA R64","NCAA R32","Sweet 16","Elite 8","Final Four","National Title"][r] || "NCAA";
+  }
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+  if(weekIndex===offStart) return "Offseason Wk1 (Jobs+Portal)";
+  if(weekIndex===offStart+1) return "Offseason Wk2 (Portal)";
+  if(weekIndex===offStart+2) return "Offseason Wk3 (Late Recruiting)";
+  if(weekIndex===offStart+3) return "Offseason Wk4 (Signing/Progression)";
+  return `Week ${weekIndex}`;
+}
+
+/* ---------- ~150 Teams Teamset ---------- */
+const TEAMSET_150 = {
+  version: 1,
+  conferences: [
+    {name:"ACC", prestigeBase:86, teams:["Duke","North Carolina","Virginia","Miami","Clemson","Florida State","NC State","Wake Forest","Syracuse","Pittsburgh","Louisville","Georgia Tech"]},
+    {name:"Big Ten", prestigeBase:88, teams:["Purdue","Michigan State","Michigan","Ohio State","Illinois","Indiana","Iowa","Wisconsin","Minnesota","Maryland","Rutgers","Penn State"]},
+    {name:"Big 12", prestigeBase:90, teams:["Kansas","Baylor","Houston","Texas Tech","Iowa State","TCU","Oklahoma State","Cincinnati","West Virginia","UCF","BYU","Kansas State"]},
+    {name:"SEC", prestigeBase:86, teams:["Kentucky","Tennessee","Auburn","Alabama","Arkansas","Florida","Texas A&M","Missouri","LSU","Ole Miss","Mississippi State","Georgia"]},
+    {name:"Big East", prestigeBase:84, teams:["UConn","Marquette","Creighton","Villanova","St. John's","Seton Hall","Providence","Xavier","Butler","Georgetown","DePaul"]},
+    {name:"Pac-12 (Alt)", prestigeBase:80, teams:["Arizona","UCLA","USC","Oregon","Washington","Colorado","Utah","Stanford","Cal","Arizona State"]},
+    {name:"AAC", prestigeBase:74, teams:["Memphis","Wichita State","SMU","Temple","Tulane","UTSA","North Texas","UAB","FAU","Rice","Charlotte","South Florida"]},
+    {name:"A-10", prestigeBase:76, teams:["Dayton","VCU","Saint Louis","Richmond","George Mason","Loyola Chicago","Duquesne","St. Bonaventure","Rhode Island","La Salle","Fordham","GW"]},
+    {name:"MWC", prestigeBase:74, teams:["San Diego State","Boise State","Nevada","Utah State","Colorado State","New Mexico","UNLV","Fresno State","Wyoming","Air Force"]},
+    {name:"WCC", prestigeBase:72, teams:["Gonzaga","Saint Mary's","San Francisco","Santa Clara","Pepperdine","Loyola Marymount","Portland","Pacific"]},
+    {name:"MVC", prestigeBase:70, teams:["Indiana State","Drake","Bradley","Northern Iowa","Belmont","Murray State","Illinois State","Evansville","Valparaiso"]},
+    {name:"C-USA", prestigeBase:66, teams:["Liberty","New Mexico State","Jacksonville State","Western Kentucky","Middle Tennessee","Louisiana Tech","FIU","UTEP","Sam Houston","Kennesaw State"]},
+    {name:"MAC", prestigeBase:62, teams:["Akron","Toledo","Kent State","Ohio","Buffalo","Bowling Green","Ball State","Miami (OH)","Western Michigan","Central Michigan"]},
+    {name:"Sun Belt", prestigeBase:64, teams:["James Madison","Appalachian State","Georgia State","Georgia Southern","Marshall","Louisiana","South Alabama","Troy","Texas State","Arkansas State"]},
+    {name:"SoCon", prestigeBase:64, teams:["Furman","Chattanooga","Samford","Wofford","UNC Greensboro","ETSU","Mercer","Western Carolina","The Citadel"]},
+    {name:"CAA", prestigeBase:62, teams:["Charleston","Towson","Hofstra","Drexel","UNC Wilmington","Delaware","Northeastern","William & Mary"]},
+    {name:"Ivy", prestigeBase:68, teams:["Yale","Princeton","Harvard","Cornell","Brown","Penn","Dartmouth","Columbia"]},
+    {name:"WAC", prestigeBase:60, teams:["Grand Canyon","New Mexico State (Alt)","UT Arlington","Utah Valley","Seattle","Cal Baptist","Tarleton State","Abilene Christian"]},
+    {name:"Horizon", prestigeBase:60, teams:["Wright State","Milwaukee","Cleveland State","Youngstown State","Northern Kentucky","Green Bay","Oakland","Purdue Fort Wayne"]},
+  ]
+};
+
+/* ---------- Names ---------- */
+const NAME = {
+  first:["Jaden","Marcus","DeAndre","Tyrese","Cameron","Ethan","Jaylen","Noah","Kobe","Miles","Dylan","Malik","Zion","Jordan","Caleb","Tre","Bryce","Isaiah","Damian","Aiden","Rashad","Micah","Logan","Colin","Xavier","Julian","Elijah","Gavin","Brandon","Terrence","Carter","Adrian","Nate","Chris","Kevin","Antonio","Kyler","Mason","Grant","Hunter","AJ","RJ","TJ","DJ"],
+  last:["Williams","Johnson","Brown","Davis","Miller","Wilson","Moore","Anderson","Thomas","Jackson","White","Harris","Martin","Thompson","Garcia","Martinez","Robinson","Clark","Lewis","Lee","Walker","Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson","Hill","Campbell","Mitchell","Carter","Roberts","Turner","Phillips","Parker","Evans","Edwards","Collins","Stewart","Sanchez","Morris","Rogers","Reed","Cook"],
+  coachFirst:["Mike","Dan","Chris","Ryan","Eric","Tony","Steve","James","Matt","Brad","Kevin","Derek","Nate","Robert","Sam","Rich","Jeff","Grant","Kyle","Todd","Mark","Andre","Jason","Pat","Bryan","John","Zach","Will"],
+  coachLast:["Henderson","Murray","Donovan","Bennett","Holt","Pearson","Crawford","Walters","Kelley","Fisher","Browning","Hughes","McCarthy","Franklin","Rivers","Hawkins","Montgomery","Owens","West","Snyder","Burke","Caldwell","Stephens","Fowler","Carver","Harrington","Simmons","Harmon","Kerrigan"]
+};
+function genPlayerName(){ return U.pick(NAME.first)+" "+U.pick(NAME.last); }
+function genCoachName(){ return U.pick(NAME.coachFirst)+" "+U.pick(NAME.coachLast); }
+
+/* ---------- Records (seed) ---------- */
+const RECORD_SEEDS = {
+  coaches: [
+    { key:"careerWins", label:"Career Wins (Coach)", value:1200, holder:"Mike Krzyzewski", detail:"Duke (seed)" },
+    { key:"nationalTitles", label:"National Championships (Coach)", value:10, holder:"John Wooden", detail:"UCLA (seed)" },
+    { key:"finalFours", label:"Final Fours (Coach)", value:12, holder:"John Wooden", detail:"UCLA (seed)" },
+  ],
+  players: [
+    { key:"careerPts", label:"Career Points", value:3667, holder:"Pete Maravich", detail:"LSU (seed)" },
+    { key:"careerReb", label:"Career Rebounds", value:1748, holder:"Tom Gola", detail:"La Salle (seed)" },
+    { key:"careerAst", label:"Career Assists", value:1000, holder:"All-time Great", detail:"(seed placeholder)" },
+    { key:"singlePts", label:"Single-Game Points", value:100, holder:"Jack Taylor", detail:"Grinnell (seed)" },
+    { key:"singleReb", label:"Single-Game Rebounds", value:45, holder:"NCAA Record", detail:"(seed placeholder)" },
+    { key:"singleAst", label:"Single-Game Assists", value:30, holder:"NCAA Record", detail:"(seed placeholder)" },
+    { key:"singleBlk", label:"Single-Game Blocks", value:17, holder:"NCAA Record", detail:"(seed placeholder)" },
+    { key:"singleStl", label:"Single-Game Steals", value:11, holder:"NCAA Record", detail:"(seed placeholder)" },
+  ],
+  legacyLeaderboard: [
+    { name:"John Wooden", school:"UCLA", legacy: 9999, note:"10 titles" },
+    { name:"Mike Krzyzewski", school:"Duke", legacy: 9000, note:"Historic wins" },
+    { name:"Roy Williams", school:"UNC/Kansas", legacy: 8200, note:"Multiple titles" },
+    { name:"Bill Self", school:"Kansas", legacy: 7800, note:"Modern powerhouse" },
+    { name:"Jim Boeheim", school:"Syracuse", legacy: 7600, note:"Longevity" },
+    { name:"Calipari", school:"Kentucky", legacy: 7400, note:"Elite recruiting" },
+  ]
+};
+function buildInitialRecords(){
+  return { coaches: U.deepCopy(RECORD_SEEDS.coaches), players: U.deepCopy(RECORD_SEEDS.players), legacy: U.deepCopy(RECORD_SEEDS.legacyLeaderboard), gameLog: [] };
+}
+function calcLegacyScore(coach){
+  const w = coach?.career?.wins ?? 0;
+  const l = coach?.career?.losses ?? 0;
+  const natties = coach?.career?.natties ?? 0;
+  const ff = coach?.career?.finalFours ?? 0;
+  const at = coach?.career?.tourneyApps ?? 0;
+  const baseLegacy = coach?.legacy ?? 0;
+  const winPct = (w + l) ? (w/(w+l)) : 0;
+  return Math.round(baseLegacy + (w*10) + (winPct*600) + (at*150) + (ff*500) + (natties*1600) - (l*4));
+}
+function upsertLegacyEntry(name, school, legacyScore, note){
+  if(!S.records) return;
+  const arr = S.records.legacy || (S.records.legacy = []);
+  const idx = arr.findIndex(x => x.name === name);
+  const entry = { name, school, legacy: legacyScore, note: note || "" };
+  if(idx >= 0) arr[idx] = entry; else arr.push(entry);
+  arr.sort((a,b)=>b.legacy-a.legacy);
+  arr.splice(30);
+}
+function maybeBreakRecord(type, key, value, holder, detail){
+  if(!S.records) return;
+  const arr = type==="coach" ? S.records.coaches : S.records.players;
+  const rec = arr.find(x=>x.key===key);
+  if(!rec) return;
+  if(value > rec.value){
+    rec.value = value;
+    rec.holder = holder;
+    rec.detail = detail;
+    toast("RECORD BROKEN!", `${rec.label}: ${U.fmt(value)} (${holder})`, "good");
+  }
+}
+
+/* ---------- Coaching Archetype Skill Tree ---------- */
+const ARCH = ["Recruiter","Motivator","Tactician","Program Builder","CEO"];
+const SKILL_NODES = {
+  Recruiter: [
+    {key:"rec_board", name:"Board Magnet", tier:1, max:3, desc:"+Starting interest"},
+    {key:"rec_close", name:"Closer", tier:2, max:3, desc:"+Late-season commit odds"},
+    {key:"rec_visits", name:"Visit King", tier:2, max:3, desc:"+Visit impact"},
+    {key:"rec_sway", name:"Sway Artist", tier:3, max:2, desc:"+Sway success odds"},
+    {key:"rec_elite", name:"Elite Recruiter", tier:4, max:2, desc:"+Big boosts to 4–5★ battles"},
+  ],
+  Motivator: [
+    {key:"mot_dev", name:"Player Growth", tier:1, max:3, desc:"+Offseason development"},
+    {key:"mot_consist", name:"Consistency", tier:2, max:3, desc:"-Performance variance"},
+    {key:"mot_retention", name:"Locker Room", tier:2, max:3, desc:"+Retention persuasion"},
+    {key:"mot_hot", name:"Hot Hand", tier:3, max:2, desc:"+Upset chance when hot"},
+    {key:"mot_master", name:"Master Motivator", tier:4, max:2, desc:"+Big development & morale"},
+  ],
+  Tactician: [
+    {key:"tac_off", name:"Offensive System", tier:1, max:3, desc:"+Sim offense"},
+    {key:"tac_def", name:"Defensive System", tier:1, max:3, desc:"+Sim defense"},
+    {key:"tac_close", name:"Close Game Killer", tier:2, max:3, desc:"+Win tight games"},
+    {key:"tac_tempo", name:"Tempo Control", tier:3, max:2, desc:"Control pace"},
+    {key:"tac_guru", name:"System Guru", tier:4, max:2, desc:"+Big sim edge"},
+  ],
+  "Program Builder": [
+    {key:"pb_brand", name:"Brand Builder", tier:4, max:2, desc:"+Program prestige growth"},
+    {key:"pb_fac", name:"Facility Push", tier:4, max:2, desc:"+Recruiting grades/budget"},
+  ],
+  CEO: [
+    {key:"ceo_staff", name:"Staff Boss", tier:5, max:2, desc:"Better assistants + hire pool"},
+    {key:"ceo_nil", name:"Big Money", tier:5, max:2, desc:"+Recruiting close rate"},
+  ]
+};
+function makeSkillState(){
+  const out = {};
+  for(const a of ARCH){
+    out[a] = {};
+    for(const n of (SKILL_NODES[a]||[])){
+      out[a][n.key] = {lvl:0, max:n.max};
+    }
+  }
+  return out;
+}
+function nodeCost(archetype, key, lvl){
+  const node = (SKILL_NODES[archetype]||[]).find(x=>x.key===key);
+  if(!node) return 1;
+  const base = node.tier<=2 ? 1 : (node.tier===3 ? 2 : (node.tier===4 ? 3 : 4));
+  return base + lvl;
+}
+function sumArchLevels(coach, arch){
+  const s = coach.skillsTree?.[arch] || {};
+  return Object.values(s).reduce((a,x)=>a+(x.lvl||0),0);
+}
+function sumAllLevels(coach){
+  return ARCH.reduce((a,arch)=>a+sumArchLevels(coach,arch),0);
+}
+function archUnlocked(coach, archetype){
+  if(archetype==="Program Builder"){
+    const r = sumArchLevels(coach,"Recruiter");
+    const m = sumArchLevels(coach,"Motivator");
+    const t = sumArchLevels(coach,"Tactician");
+    return (r>=6 && (m>=4 || t>=4));
+  }
+  if(archetype==="CEO"){
+    const total = sumAllLevels(coach);
+    const natties = coach?.career?.natties ?? 0;
+    const ff = coach?.career?.finalFours ?? 0;
+    return total>=18 && (natties>=1 || ff>=2);
+  }
+  return true;
+}
+
+/* ---------- Coach ---------- */
+function makeCoach({name}){
+  return {
+    id: U.uuid(),
+    name,
+    role:"HC",
+    prestige: U.clamp(45 + U.rint(-8,+10), 20, 95),
+    rep:{ recruiting: U.rint(35,75), dev: U.rint(35,75), tactics: U.rint(35,75) },
+    xp: 0,
+    skillPoints: 3,
+    spCarry: 0,
+    skillsTree: makeSkillState(),
+    goals:null,
+    hotSeat:0,
+    contract:null,
+    career:{ wins:0, losses:0, natties:0, finalFours:0, tourneyApps:0 },
+    legacy:0,
+  };
+}
+function xpGainMultiplier(){
+  const m = S?.settings?.xpSpeed ?? 1.0;
+  return U.clamp(parseFloat(m)||1.0, 0.25, 4.0);
+}
+function skillPointRate(){
+  const r = S?.settings?.skillPointRate ?? 1.0;
+  return U.clamp(parseFloat(r)||1.0, 0.5, 4.0);
+}
+function addXP(coach, amt){
+  if(!coach) return;
+  if(S?.settings?.infiniteXP){
+    coach.skillPoints = 999;
+    coach.xp = 0;
+    for(const a of ARCH){
+      for(const n of (SKILL_NODES[a]||[])){
+        coach.skillsTree[a][n.key].lvl = coach.skillsTree[a][n.key].max;
+      }
+    }
+    return;
+  }
+  coach.xp += Math.round(amt * xpGainMultiplier());
+  while(coach.xp >= 100){
+    coach.xp -= 100;
+    coach.spCarry += skillPointRate();
+    while(coach.spCarry >= 1.0){
+      coach.skillPoints += 1;
+      coach.spCarry -= 1.0;
+      toast("Skill Point", "+1 skill point earned.", "good");
+    }
+  }
+}
+function upgradeNode(coach, arch, key){
+  if(!coach) return;
+  if(!archUnlocked(coach, arch)) return toast("Locked", `${arch} is locked.`, "bad");
+  const node = (SKILL_NODES[arch]||[]).find(x=>x.key===key);
+  if(!node) return;
+  const st = coach.skillsTree[arch][key];
+  if(st.lvl >= st.max) return toast("Maxed", "That perk is max level.", "bad");
+  const cost = nodeCost(arch, key, st.lvl);
+  if(!S.settings.infiniteXP && coach.skillPoints < cost) return toast("No Points", `Need ${cost} skill points.`, "bad");
+  if(!S.settings.infiniteXP) coach.skillPoints -= cost;
+  st.lvl += 1;
+  toast("Upgraded", `${node.name} → Lv ${st.lvl} (Cost ${cost})`, "good");
+}
+
+/* ---------- Player / Team ---------- */
+function blankStats(){ return { gp:0, pts:0, reb:0, ast:0, stl:0, blk:0, tov:0 }; }
+function ensureStats(p){
+  if(!p.seasonStats) p.seasonStats = blankStats();
+  if(!p.careerStats) p.careerStats = blankStats();
+}
+function addStats(dst, add){
+  for(const k of Object.keys(add)){
+    if(typeof add[k]==="number") dst[k] = (dst[k]||0) + add[k];
+  }
+}
+function makePlayer({pos,year,ovr,pot,arch}){
+  return { id: U.uuid(), name: genPlayerName(), pos, year, ovr, pot, arch: arch||"Balanced", seasonStats: blankStats(), careerStats: blankStats() };
+}
+function teamAvgOVR(team){
+  return Math.round(team.roster.reduce((a,p)=>a+p.ovr,0)/Math.max(1,team.roster.length));
+}
+function recomputeScholarships(team){
+  const now = Math.max(0, GAME.MAX_SCHOLARSHIPS - (team.roster?.length||0));
+  const seniors = (team.roster||[]).filter(p=>p.year==="SR").length;
+  team.scholarshipsNow = now;
+  team.scholarshipsProjected = U.clamp(now + seniors, 0, GAME.MAX_SCHOLARSHIPS);
+  team.scholarships = team.scholarshipsNow;
+}
+function computeNeeds(team){
+  const counts = {};
+  for(const p of team.roster) counts[p.pos] = (counts[p.pos]||0)+1;
+  const target = {PG:2, SG:3, SF:3, PF:3, C:2};
+  team.needs = {};
+  for(const pos of GAME.POS) team.needs[pos] = Math.max(0, (target[pos]||0) - (counts[pos]||0));
+}
+/* tighter roster composition: always 13 with realistic distribution + 3 seniors minimum */
+function buildRoster(team){
+  const dist = ["PG","PG","SG","SG","SG","SF","SF","SF","PF","PF","PF","C","C"];
+  const years = ["SR","SR","SR","JR","JR","SO","SO","FR","FR","FR","SO","JR","FR"];
+  return dist.map((pos,i)=>{
+    const base = U.clamp(team.ovr + U.rint(-10,+9), 55, 92);
+    const ovr = U.clamp(base + U.rint(-8,+7), 50, 95);
+    const year = years[i] || U.pick(["FR","SO","JR","SR"]);
+    const pot = U.rint(0,10);
+    const arch = U.pick(["Shooter","Slasher","Playmaker","3&D","Rim Protector","Stretch Big","Balanced"]);
+    const p = makePlayer({pos,year,ovr,pot,arch});
+    ensureStats(p);
+    return p;
+  });
+}
+
+/* ---------- Recruiting grades (dealbreakers) ---------- */
+const LETTERS = ["F","D","C","B","A"];
+function scoreToLetter(score){
+  const s = U.clamp(Math.round(score),0,100);
+  if(s>=85) return "A";
+  if(s>=70) return "B";
+  if(s>=55) return "C";
+  if(s>=40) return "D";
+  return "F";
+}
+function letterVal(l){ return LETTERS.indexOf(l)<0?0:LETTERS.indexOf(l); }
+function computeGrades(team){
+  const games = team.season.games||0;
+  const winPct = games ? (team.season.w/games) : 0;
+  const coach = team.staff?.HC;
+
+  const brand = U.clamp(team.prestige*0.7 + winPct*22 + U.rint(-6,6), 0, 100);
+  const facilities = U.clamp(team.budget*0.75 + U.rint(-10,10), 0, 100);
+  const champ = U.clamp(team.ovr*0.45 + team.prestige*0.35 + winPct*25 + U.rint(-8,8), 0, 100);
+  const pro = U.clamp(team.ovr*0.65 + U.rint(-8,8), 0, 100);
+  const stability = U.clamp(75 - (coach?.hotSeat||0)*14 + (sumArchLevels(coach,"Motivator")*1.8) + U.rint(-8,8), 0, 100);
+
+  const proj = team.scholarshipsProjected ?? 0;
+  const playingTime = U.clamp(40 + proj*7 + U.rint(-10,10), 0, 100);
+
+  team.grades = {
+    brand: scoreToLetter(brand),
+    facilities: scoreToLetter(facilities),
+    champ: scoreToLetter(champ),
+    pro: scoreToLetter(pro),
+    stability: scoreToLetter(stability),
+    playingTime: scoreToLetter(playingTime),
+  };
+  return team.grades;
+}
+const MOTIVES = ["brand","facilities","champ","pro","stability","playingTime"];
+const DEAL_REQ = { brand:"C", facilities:"C", champ:"C", pro:"C", stability:"C", playingTime:"B" };
+function meetsDeal(team, deal){
+  const need = DEAL_REQ[deal] || "C";
+  const got = team.grades?.[deal] || "F";
+  return letterVal(got) >= letterVal(need);
+}
+
+/* ---------- Recruit model ---------- */
+function makeRecruit(){
+  const ovr = U.clamp(U.rint(60,92) + (Math.random()<0.06?U.rint(3,6):0), 58, 97);
+  const stars = U.clamp(Math.round((ovr-58)/8), 1, 5);
+  const motives = U.deepCopy(MOTIVES).sort(()=>Math.random()-0.5).slice(0,3);
+  const deal = U.pick(MOTIVES);
+  return {
+    id: U.uuid(),
+    name: genPlayerName(),
+    pos: U.pick(GAME.POS),
+    state: U.pick(GAME.STATES),
+    stars, ovr, pot: U.rint(0,10),
+    motives,
+    dealbreaker: deal,
+    stage:"open",
+    committedTo:null,
+    offers:[],      // teamIds
+    delta:{},       // teamId -> delta
+    visitedBy:{},
+    visitScheduled:{},
+    visitPitch:{},
+    swayLocked:false,
+  };
+}
+function buildRecruitPool(n){ return Array.from({length:n}, ()=>makeRecruit()); }
+function hash32(str){
+  let h = 2166136261>>>0;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h>>>0;
+}
+function noiseRange(key,min,max){
+  const h = hash32(key);
+  const span = (max-min+1);
+  return min + (h % span);
+}
+function capMap(obj, maxKeys){
+  const keys = Object.keys(obj||{});
+  if(keys.length<=maxKeys) return;
+  keys.sort((a,b)=>Math.abs(obj[a]) - Math.abs(obj[b]));
+  const drop = keys.slice(0, keys.length-maxKeys);
+  for(const k of drop) delete obj[k];
+}
+
+/* ---------- Interest + ranks ---------- */
+function baseInterest(r, team, scoutLvl=0){
+  const need = (team.needs?.[r.pos]||0);
+  const needBoost = Math.min(12, need*6);
+  const jitter = noiseRange(r.id+"|"+team.id, -12, 12);
+  const scoutBoost = Math.round(scoutLvl * 2.0);
+
+  const ok = meetsDeal(team, r.dealbreaker);
+  const dbPenalty = ok ? 0 : 20;
+
+  return U.clamp(team.prestige*0.55 + team.budget*0.22 + needBoost + scoutBoost + jitter - dbPenalty, 0, 100);
+}
+function interest(r, team, isUser=false){
+  const coach = isUser ? S.userCoach : null;
+  const scout = coach ? sumArchLevels(coach,"Recruiter")*0.55 : 0;
+  const offerBonus = (r.offers?.includes(team.id) ? 7 : 0);
+  const d = r.delta?.[team.id] ?? 0;
+  return U.clamp(baseInterest(r, team, scout) + offerBonus + d, 0, 100);
+}
+function rankTeams(r){
+  const arr = S.league.teams.map(t=>({id:t.id, val: interest(r, t, t.id===S.userTeamId)}));
+  arr.sort((a,b)=>b.val-a.val);
+  return arr;
+}
+function pitchFactor(r, team, pitchKey){
+  const inMot = r.motives.includes(pitchKey);
+  const letter = team.grades?.[pitchKey] || "F";
+  const gradeBoost = letterVal(letter)/4;
+  return (inMot?1.35:0.85) * (0.78 + gradeBoost*0.6);
+}
+
+/* ---------- Scholarships (projected) ---------- */
+function projectedRecruitSlots(team){
+  const projected = team.scholarshipsProjected ?? 0;
+  const commits = team.recruiting?.commits?.length ?? 0;
+  return Math.max(0, projected - commits);
+}
+function canOfferRecruit(team){ return projectedRecruitSlots(team) > 0; }
+
+/* ---------- Recruiting actions ---------- */
+const ACTIONS = {
+  soft: {label:"Soft", cost:40, baseEff:0.95},
+  hard: {label:"Hard", cost:85, baseEff:1.45},
+  sway: {label:"Sway", cost:70, baseEff:0.0},
+  visit:{label:"Visit", cost:120, baseEff:1.95},
+};
+
+/* ✅ Offer detection that never lies */
+function hasUserOffer(team, recruit){
+  if(!team || !recruit) return false;
+  const byRecruit = Array.isArray(recruit.offers) && recruit.offers.includes(team.id);
+  const byBoard  = Array.isArray(team.recruiting?.offered) && team.recruiting.offered.includes(recruit.id);
+  return !!(byRecruit || byBoard);
+}
+function ensureUserOffer(team, recruit){
+  if(!team || !recruit) return;
+  team.recruiting.offered ??= [];
+  recruit.offers ??= [];
+  if(!team.recruiting.offered.includes(recruit.id)) team.recruiting.offered.push(recruit.id);
+  if(!recruit.offers.includes(team.id)) recruit.offers.push(team.id);
+  if(recruit.offers.length>12) recruit.offers.length=12;
+}
+function offerRecruit(recruitId){
+  const team = getUserTeam();
+  const r = S.recruits.find(x=>x.id===recruitId);
+  if(!team || !r) return;
+
+  if(team.recruiting.offered.includes(recruitId)) return toast("Already Offered", "Offer already used.", "bad");
+  if(!canOfferRecruit(team)){
+    const sr = (team.roster||[]).filter(p=>p.year==="SR").length;
+    return toast("No Projected Scholarships", `Projected slots = 0 (Seniors: ${sr}, Commits: ${(team.recruiting.commits||[]).length}).`, "bad");
+  }
+
+  ensureUserOffer(team, r);
+  toast("Offer Sent", `${r.stars}★ ${r.pos} ${r.name}`, "good");
+}
+
+function queueModal(obj){ S.ui.modalQueue.push(obj); }
+function clearModal(){ S.ui.modalQueue.shift(); }
+
+function applyRecruitAction(team, coach, r, actionKey, pitchKey){
+  const A = ACTIONS[actionKey];
+  if(!A) return;
+
+  const offered = hasUserOffer(team, r);
+
+  if(actionKey!=="sway" && actionKey!=="visit" && !offered) return toast("Offer Needed", "Offer first.", "bad");
+  if(actionKey==="visit" && !offered) return toast("Offer Needed", "Offer first.", "bad");
+
+  if(actionKey==="visit"){
+    r.visitedBy ??= {};
+    r.visitScheduled ??= {};
+    r.visitPitch ??= {};
+
+    if(r.visitedBy[team.id]) return toast("Already Visited", "Visit already completed.", "bad");
+    if(r.visitScheduled[team.id]!=null) return toast("Already Scheduled", "Visit already scheduled.", "bad");
+
+    const avail = team.recruiting.points - team.recruiting.spent;
+    if(A.cost > avail) return toast("No Points", `Only ${avail} points left.`, "bad");
+
+    const okWeeks = [];
+    const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+    if(S.phase==="season"){ for(let w=6; w<=GAME.REG_WEEKS; w++) okWeeks.push(w); }
+    else { okWeeks.push(offStart+2); }
+    queueModal({ type:"scheduleVisit", recruitId:r.id, pitch:pitchKey, cost:A.cost, weeks: okWeeks });
+    return;
+  }
+
+  const avail = team.recruiting.points - team.recruiting.spent;
+  if(A.cost > avail) return toast("No Points", `Only ${avail} points left.`, "bad");
+
+  if(actionKey==="sway"){
+    if(r.swayLocked) return toast("Sway Locked", "Only one sway attempt.", "bad");
+    r.swayLocked = true;
+
+    team.recruiting.spent += A.cost;
+    team.recruiting.spentMap[r.id] = (team.recruiting.spentMap[r.id]||0)+A.cost;
+
+    const ok = meetsDeal(team, r.dealbreaker);
+    const recLevels = sumArchLevels(coach,"Recruiter");
+    const odds = U.clamp(0.26 + recLevels*0.05 + (ok?0.05:-0.10) + U.rint(-6,6)/100, 0.10, 0.78);
+
+    if(Math.random()<odds){
+      if(!r.motives.includes(pitchKey)) r.motives[U.rint(0,2)] = pitchKey;
+      const bump = 8 + recLevels*2 + U.rint(0,6);
+      r.delta[team.id] = (r.delta[team.id]||0) + bump;
+      toast("Sway Success", `${r.name} now cares about ${pitchKey.toUpperCase()}.`, "good");
+    } else {
+      const hit = 6 + U.rint(0,6);
+      r.delta[team.id] = (r.delta[team.id]||0) - hit;
+      toast("Sway Failed", `${r.name} (-${hit})`, "warn");
+    }
+    capMap(r.delta, 14);
+    return;
+  }
+
+  team.recruiting.spent += A.cost;
+  team.recruiting.spentMap[r.id] = (team.recruiting.spentMap[r.id]||0) + A.cost;
+
+  const cur = interest(r, team, true);
+  const ok = meetsDeal(team, r.dealbreaker);
+  const match = pitchFactor(r, team, pitchKey);
+
+  const closer = coach.skillsTree.Recruiter.rec_close.lvl || 0;
+  const elite = coach.skillsTree.Recruiter.rec_elite.lvl || 0;
+  const recLevels = sumArchLevels(coach,"Recruiter");
+
+  const eff = (0.040 + (coach.rep.recruiting*0.00022) + (recLevels*0.010) + (elite*0.010))
+    * A.baseEff * match * (ok?1.0:0.70);
+
+  let gain = Math.round(A.cost * eff * (1 - cur/135));
+  if(actionKey==="hard") gain += Math.round(closer*2);
+  gain += U.rint(-1,2);
+
+  r.delta[team.id] = (r.delta[team.id]||0) + gain;
+  capMap(r.delta, 14);
+
+  toast(`${A.label} Sell`, `+${gain} interest`, "good");
+}
+
+/* ---------- Visits apply on scheduled week ---------- */
+function recapVisit(r,gain){ S.ui.lastRecap?.visits?.push({name:r.name,pos:r.pos,stars:r.stars,gain}); }
+function applyScheduledVisitsForWeek(){
+  const team = getUserTeam();
+  if(!team) return;
+  const wk = S.weekIndex;
+
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+  const okWeek = (S.phase==="season" && wk>=6 && wk<=GAME.REG_WEEKS) || (S.phase==="offseason" && wk===offStart+2);
+  if(!okWeek) return;
+
+  const coach = S.userCoach;
+  const visitKing = coach.skillsTree.Recruiter.rec_visits.lvl || 0;
+
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+    const sched = r.visitScheduled?.[team.id];
+    if(sched !== wk) continue;
+
+    const pitchKey = r.visitPitch?.[team.id] || "brand";
+    const cur = interest(r, team, true);
+    const ok = meetsDeal(team, r.dealbreaker);
+    const match = pitchFactor(r, team, pitchKey);
+
+    const eff = (0.042 + coach.rep.recruiting*0.00022 + sumArchLevels(coach,"Recruiter")*0.010 + visitKing*0.010)
+      * ACTIONS.visit.baseEff * match * (ok?1.0:0.70);
+
+    const gain = Math.round(ACTIONS.visit.cost * eff * (1 - cur/135)) + U.rint(-1,2);
+    r.delta[team.id] = (r.delta[team.id]||0) + gain;
+    capMap(r.delta, 14);
+
+    r.visitedBy[team.id] = true;
+    delete r.visitScheduled[team.id];
+    delete r.visitPitch[team.id];
+
+    toast("Visit Completed", `${r.name} (+${gain})`, "good");
+    recapVisit(r,gain);
+  }
+}
+
+/* ---------- Portal ---------- */
+function buildPortalPool(){
+  const pool = [];
+  const baseRate = U.clamp(S.settings.portalRate ?? 0.065, 0.0, 0.18);
+  const cpuMult  = U.clamp(S.settings.cpuPortalMult ?? 1.0, 0.2, 2.5);
+  const userMult = U.clamp(S.settings.userPortalMult ?? 1.0, 0.2, 2.5);
+
+  for(const t of S.league.teams){
+    for(const p of t.roster){
+      if(p.year==="SR") continue;
+      const need = (t.needs?.[p.pos]||0);
+      const mult = (t.id===S.userTeamId ? userMult : cpuMult);
+      const risk = (need<=0 ? 1.25 : 0.85) * (p.ovr < teamAvgOVR(t)-6 ? 1.15 : 1.0);
+      if(Math.random() < baseRate * mult * risk){
+        pool.push({ ...U.deepCopy(p), portalFrom:t.id, portalDelta:{} });
+      }
+    }
+  }
+  pool.sort(()=>Math.random()-0.5);
+  S.portal.pool = pool.slice(0, GAME.PORTAL_POOL);
+}
+function portalInterest(player, team, isUser=false){
+  const coach = isUser ? S.userCoach : null;
+  const jitter = noiseRange(player.id+"|"+team.id, -15, 15);
+  const d = player.portalDelta?.[team.id] ?? 0;
+  const recruiter = coach ? sumArchLevels(coach,"Recruiter") : 0;
+  const portalPerks = coach ? sumArchLevels(coach,"Recruiter")*0.35 + sumArchLevels(coach,"Motivator")*0.10 : 0;
+  return U.clamp(team.prestige*0.60 + recruiter*0.9 + portalPerks + jitter + d, 0, 100);
+}
+function portalSpend(playerId, pts){
+  const t = getUserTeam();
+  const p = S.portal.pool.find(x=>x.id===playerId);
+  if(!t || !p) return;
+
+  const avail = t.recruiting.points - t.recruiting.spent;
+  if(pts>avail) return toast("No Points", `Only ${avail} pts left.`, "bad");
+
+  t.recruiting.spent += pts;
+  const cur = portalInterest(p, t, true);
+  const rec = sumArchLevels(S.userCoach,"Recruiter");
+  const eff = 0.052 + rec*0.010;
+  const gain = Math.round(pts * eff * (1 - cur/140)) + U.rint(-1,2);
+
+  p.portalDelta[t.id] = (p.portalDelta[t.id]||0) + gain;
+  capMap(p.portalDelta, 12);
+  toast("Portal Push", `+${gain} interest on ${p.name}.`, "good");
+}
+
+/* ---------- Retention ---------- */
+function buildRetentionList(){
+  const t = getUserTeam();
+  if(!t) return;
+  const avg = teamAvgOVR(t);
+  const atRisk = [];
+  for(const p of t.roster){
+    if(p.year==="SR") continue;
+    const need = (t.needs?.[p.pos]||0);
+    const risk = (need<=0 ? 1 : 0) + (p.ovr < avg-6 ? 1 : 0) + (Math.random()<0.25 ? 1 : 0);
+    if(risk>=2 && Math.random()<0.55) atRisk.push(p);
+  }
+  S.ui.retention.atRisk = atRisk.slice(0, 6).map(x=>x.id);
+}
+function persuasionAttemptsMax(){
+  const c = S.userCoach;
+  const base = 2;
+  const perk = (c.skillsTree.Motivator.mot_retention.lvl||0);
+  return base + Math.floor(perk/2);
+}
+function persuadeKeep(playerId){
+  const t = getUserTeam();
+  const c = S.userCoach;
+  if(!t || !c) return;
+
+  const used = S.ui.retention.attemptsUsed ?? 0;
+  const max = persuasionAttemptsMax();
+  if(used >= max) return toast("No Attempts", "You used all persuasion attempts.", "bad");
+
+  const p = t.roster.find(x=>x.id===playerId);
+  if(!p) return;
+
+  const perk = (c.skillsTree.Motivator.mot_retention.lvl||0) + (c.skillsTree.Motivator.mot_master.lvl||0);
+  const odds = U.clamp(0.45 + perk*0.08 + U.rint(-6,6)/100, 0.15, 0.92);
+
+  S.ui.retention.attemptsUsed = used + 1;
+  if(Math.random() < odds){
+    S.ui.retention.atRisk = (S.ui.retention.atRisk||[]).filter(id=>id!==playerId);
+    toast("Stayed!", `${p.name} decided to stay.`, "good");
+  } else toast("Nope", `${p.name} still wants out.`, "warn");
+}
+
+/* ---------- League + schedule ---------- */
+function weeklyRecruitingPoints(team){
+  const hc = team.staff.HC;
+  const a1 = team.staff.A1, a2 = team.staff.A2;
+  const rep = ((hc?.rep?.recruiting??55) + (a1?.rep?.recruiting??55) + (a2?.rep?.recruiting??55))/3;
+  return 260 + Math.round(team.budget*4.2) + Math.round(rep*1.8);
+}
+function buildSeasonSchedule(teams){
+  const weeks = [];
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const games = [];
+    for(let r=0;r<GAME.GAMES_PER_WEEK;r++){
+      const used = new Set();
+      const order = teams.slice().sort(()=>Math.random()-0.5);
+      for(const a of order){
+        if(used.has(a.id)) continue;
+        const pool = teams.filter(x=>!used.has(x.id) && x.id!==a.id);
+        if(!pool.length) continue;
+        const confPool = pool.filter(x=>x.conf===a.conf);
+        const opp = (Math.random()<0.42 && confPool.length) ? U.pick(confPool) : U.pick(pool);
+        used.add(a.id); used.add(opp.id);
+        const homeFirst = Math.random() < 0.5;
+        games.push({
+          home: homeFirst ? a.id : opp.id,
+          away: homeFirst ? opp.id : a.id,
+          played:false, scoreH:0, scoreA:0,
+          tag: r===0 ? "G1" : "G2",
+        });
+      }
+    }
+    weeks.push({week:w, games});
+  }
+  return weeks;
+}
+
+function buildLeague(teamset){
+  const teams = [];
+  for(const conf of teamset.conferences){
+    for(const name of conf.teams){
+      teams.push({
+        id: U.uuid(),
+        name: name.trim(),
+        conf: conf.name,
+        prestige: U.clamp(conf.prestigeBase + U.rint(-10,+10), 35, 92),
+        budget: U.clamp(45 + conf.prestigeBase + U.rint(-12,+14), 35, 98),
+        ovr: U.clamp(conf.prestigeBase + U.rint(-14,+12), 35, 93),
+        off: U.clamp(conf.prestigeBase + U.rint(-16,+14), 30, 95),
+        def: U.clamp(conf.prestigeBase + U.rint(-16,+14), 30, 95),
+        tempo: U.clamp(68 + U.rint(-6,+7) + Math.round((conf.prestigeBase-70)*0.10), 60, 76),
+        sos:70,
+        season:{ w:0,l:0, confW:0, confL:0, pf:0, pa:0, games:0 },
+        yearlog:[],
+        staff:{ HC:null, A1:null, A2:null },
+        roster:[],
+        scholarships:0, scholarshipsNow:0, scholarshipsProjected:0,
+        needs:{},
+        grades:{},
+        recruiting:{ points:0, spent:0, offered:[], spentMap:{}, commits:[], classSlots: 4 }
+      });
+    }
+  }
+  for(const t of teams){
+    t.roster = buildRoster(t);
+    t.staff.HC = makeCoach({name: genCoachName()});
+    t.staff.A1 = { id:U.uuid(), name: genCoachName(), role:"A1", rep:{recruiting:U.rint(35,75)} };
+    t.staff.A2 = { id:U.uuid(), name: genCoachName(), role:"A2", rep:{recruiting:U.rint(35,75)} };
+    recomputeScholarships(t);
+    computeNeeds(t);
+    computeGrades(t);
+  }
+  return teams;
+}
+
+/* ---------- Sim + stats ---------- */
+function simGame(teamH, teamA){
+  const homeAdv = 2.2;
+  const pace = (teamH.tempo + teamA.tempo)/2;
+
+  const hEff = (teamH.off - teamA.def)*0.18 + (teamAvgOVR(teamH)-teamAvgOVR(teamA))*0.08 + homeAdv;
+  const aEff = (teamA.off - teamH.def)*0.18 + (teamAvgOVR(teamA)-teamAvgOVR(teamH))*0.08;
+
+  let scoreH = Math.round((pace + 4) + hEff + U.rint(-8,9));
+  let scoreA = Math.round((pace + 2) + aEff + U.rint(-8,9));
+  scoreH = U.clamp(scoreH, 45, 98);
+  scoreA = U.clamp(scoreA, 45, 98);
+  if(scoreH===scoreA){ scoreH += U.rint(1,6); }
+
+  const rebTotal = U.clamp(Math.round(34 + (teamAvgOVR(teamH)+teamAvgOVR(teamA))/10 + U.rint(-6,6)), 26, 48);
+  const tovH = U.clamp(Math.round(11 + (teamA.def-teamH.off)*0.06 + U.rint(-3,4)), 6, 19);
+  const tovA = U.clamp(Math.round(11 + (teamH.def-teamA.off)*0.06 + U.rint(-3,4)), 6, 19);
+  const astH = U.clamp(Math.round(scoreH*0.55 + U.rint(-5,6)), 8, 26);
+  const astA = U.clamp(Math.round(scoreA*0.55 + U.rint(-5,6)), 8, 26);
+  const stlH = U.clamp(Math.round(6 + (teamH.def-teamA.off)*0.04 + U.rint(-2,3)), 2, 14);
+  const stlA = U.clamp(Math.round(6 + (teamA.def-teamH.off)*0.04 + U.rint(-2,3)), 2, 14);
+  const blkH = U.clamp(Math.round(3 + (teamH.def-teamA.off)*0.03 + U.rint(-1,3)), 0, 10);
+  const blkA = U.clamp(Math.round(3 + (teamA.def-teamH.off)*0.03 + U.rint(-1,3)), 0, 10);
+
+  const boxH = { pts:scoreH, reb: Math.round(rebTotal*0.52 + U.rint(-3,3)), ast:astH, stl:stlH, blk:blkH, tov:tovH };
+  const boxA = { pts:scoreA, reb: Math.round(rebTotal*0.48 + U.rint(-3,3)), ast:astA, stl:stlA, blk:blkA, tov:tovA };
+
+  return {scoreH, scoreA, boxH, boxA};
+}
+function applyResult(teamH, teamA, scoreH, scoreA){
+  teamH.season.games++; teamA.season.games++;
+  teamH.season.pf += scoreH; teamH.season.pa += scoreA;
+  teamA.season.pf += scoreA; teamA.season.pa += scoreH;
+
+  const confGame = (teamH.conf === teamA.conf);
+  if(scoreH>scoreA){
+    teamH.season.w++; teamA.season.l++;
+    if(confGame){ teamH.season.confW++; teamA.season.confL++; }
+  } else {
+    teamA.season.w++; teamH.season.l++;
+    if(confGame){ teamA.season.confW++; teamH.season.confL++; }
+  }
+}
+
+/* user player stat allocation */
+function allocateTotals(players, total, weightFn){
+  const w = players.map(p=>Math.max(1, weightFn(p)));
+  const sum = w.reduce((a,b)=>a+b,0);
+  const out = new Array(players.length).fill(0);
+  let rem = total;
+  for(let i=0;i<players.length;i++){
+    const share = w[i]/sum;
+    const val = (i===players.length-1) ? rem : Math.max(0, Math.round(total*share + U.rint(-2,2)));
+    out[i] = val; rem -= val;
+  }
+  let cur = out.reduce((a,b)=>a+b,0);
+  while(cur<total){ out[U.rint(0,out.length-1)]++; cur++; }
+  while(cur>total){ const j=U.rint(0,out.length-1); if(out[j]>0){out[j]--; cur--; } }
+  return out;
+}
+function applyBoxToUserPlayers(team, box){
+  if(team.id !== S.userTeamId) return;
+
+  const roster = team.roster.slice().sort((a,b)=>b.ovr-a.ovr);
+  for(const p of roster) ensureStats(p);
+
+  const starters = roster.slice(0,5);
+  const bench = roster.slice(5,10);
+  const scorers = [...starters, ...bench.slice(0,3)].slice(0,8);
+
+  const ptsAlloc = allocateTotals(scorers, box.pts, p=> (p.ovr-45) + (p.pos==="PG"||p.pos==="SG"?6:0) + U.rint(0,6));
+  const rebPool = [...starters, ...bench.slice(0,3)].slice(0,8);
+  const rebAlloc = allocateTotals(rebPool, box.reb, p=> (p.ovr-45) + (p.pos==="C"||p.pos==="PF"?10:(p.pos==="SF"?4:0)) + U.rint(0,5));
+  const astPool = [...starters, ...bench.slice(0,2)].slice(0,7);
+  const astAlloc = allocateTotals(astPool, box.ast, p=> (p.pos==="PG"?16:(p.pos==="SG"?10:(p.pos==="SF"?6:3))) + (p.ovr-50)*0.2 + U.rint(0,4));
+  const stlPool = [...starters, ...bench.slice(0,2)].slice(0,7);
+  const stlAlloc = allocateTotals(stlPool, box.stl, p=> (p.pos==="PG"||p.pos==="SG"?8:(p.pos==="SF"?7:4)) + U.rint(0,3));
+  const blkPool = [...starters, ...bench.slice(0,2)].slice(0,7);
+  const blkAlloc = allocateTotals(blkPool, box.blk, p=> (p.pos==="C"?16:(p.pos==="PF"?10:(p.pos==="SF"?5:2))) + U.rint(0,3));
+  const tovPool = scorers;
+  const tovAlloc = allocateTotals(tovPool, box.tov, p=> (p.pos==="PG"?14:(p.pos==="SG"?10:6)) + U.rint(0,4));
+
+  const addGP = (p)=>{ p.seasonStats.gp++; p.careerStats.gp++; };
+
+  for(let i=0;i<scorers.length;i++){
+    const p = scorers[i]; addGP(p);
+    const add = { pts: ptsAlloc[i], tov: tovAlloc[i] };
+    addStats(p.seasonStats, add); addStats(p.careerStats, add);
+    maybeBreakRecord("player","singlePts", ptsAlloc[i], p.name, getUserTeam().name);
+  }
+  for(let i=0;i<rebPool.length;i++){
+    const p = rebPool[i]; if(p.seasonStats.gp===0){ addGP(p); }
+    const add = { reb: rebAlloc[i] };
+    addStats(p.seasonStats, add); addStats(p.careerStats, add);
+    maybeBreakRecord("player","singleReb", rebAlloc[i], p.name, getUserTeam().name);
+  }
+  for(let i=0;i<astPool.length;i++){
+    const p = astPool[i]; if(p.seasonStats.gp===0){ addGP(p); }
+    const add = { ast: astAlloc[i] };
+    addStats(p.seasonStats, add); addStats(p.careerStats, add);
+    maybeBreakRecord("player","singleAst", astAlloc[i], p.name, getUserTeam().name);
+  }
+  for(let i=0;i<stlPool.length;i++){
+    const p = stlPool[i]; if(p.seasonStats.gp===0){ addGP(p); }
+    const add = { stl: stlAlloc[i] };
+    addStats(p.seasonStats, add); addStats(p.careerStats, add);
+    maybeBreakRecord("player","singleStl", stlAlloc[i], p.name, getUserTeam().name);
+  }
+  for(let i=0;i<blkPool.length;i++){
+    const p = blkPool[i]; if(p.seasonStats.gp===0){ addGP(p); }
+    const add = { blk: blkAlloc[i] };
+    addStats(p.seasonStats, add); addStats(p.careerStats, add);
+    maybeBreakRecord("player","singleBlk", blkAlloc[i], p.name, getUserTeam().name);
+  }
+}
+
+/* ---------- Weekly recap ---------- */
+function initWeekRecap(){
+  S.ui.lastRecap = { year:S.year, weekIndex:S.weekIndex, weekName: weekName(S.weekIndex), games:[], commitsWon:[], commitsLost:[], visits:[], stars:[] };
+}
+function recapAddGame(line, tag){ S.ui.lastRecap.games.push({line, tag}); }
+function recapCommitWon(r){ S.ui.lastRecap.commitsWon.push({name:r.name,pos:r.pos,stars:r.stars,ovr:r.ovr}); }
+function recapCommitLost(r,to){ S.ui.lastRecap.commitsLost.push({name:r.name,pos:r.pos,stars:r.stars,ovr:r.ovr,to}); }
+function recapStar(line){ S.ui.lastRecap.stars.push(line); }
+
+/* ---------- Postseason / bracket ---------- */
+function teamResumeScore(team){
+  const g = team.season.games || 0;
+  const winPct = g ? team.season.w/g : 0;
+  const margin = g ? ((team.season.pf-team.season.pa)/g) : 0;
+  const sos = team.sos || 70;
+  return (winPct*100) + (margin*1.2) + (team.prestige*0.35) + (sos*0.30);
+}
+function computeSOS(){
+  for(const t of S.league.teams){ t.sos = 70; }
+  const oppMap = new Map();
+  for(const wk of S.league.schedule){
+    for(const g of wk.games){
+      const h = getTeam(g.home), a = getTeam(g.away);
+      (oppMap.get(h.id) ?? oppMap.set(h.id, []).get(h.id)).push(a.prestige);
+      (oppMap.get(a.id) ?? oppMap.set(a.id, []).get(a.id)).push(h.prestige);
+    }
+  }
+  for(const t of S.league.teams){
+    const arr = oppMap.get(t.id) || [];
+    if(arr.length) t.sos = Math.round(arr.reduce((x,y)=>x+y,0)/arr.length);
+  }
+}
+function simNeutralGame(teamA, teamB){
+  const pace = (teamA.tempo + teamB.tempo)/2;
+  const aEff = (teamA.off - teamB.def)*0.18 + (teamAvgOVR(teamA)-teamAvgOVR(teamB))*0.08 + U.rint(-2,2);
+  const bEff = (teamB.off - teamA.def)*0.18 + (teamAvgOVR(teamB)-teamAvgOVR(teamA))*0.08 + U.rint(-2,2);
+  let aScore = U.clamp(Math.round((pace + 3) + aEff + U.rint(-10,10)), 45, 100);
+  let bScore = U.clamp(Math.round((pace + 3) + bEff + U.rint(-10,10)), 45, 100);
+  if(aScore===bScore) aScore += U.rint(1,5);
+  const winId = aScore>bScore ? teamA.id : teamB.id;
+  return { aScore, bScore, winId };
+}
+function buildConfTourneys(){
+  const byConf = {};
+  for(const t of S.league.teams) (byConf[t.conf] ??= []).push(t);
+  S.post.confTourneys = {};
+  for(const [conf, list] of Object.entries(byConf)){
+    const sorted = list.slice().sort((a,b)=>{
+      const aw=a.season.confW, bw=b.season.confW;
+      const al=a.season.confL, bl=b.season.confL;
+      const aPct = (aw+al)? aw/(aw+al) : 0;
+      const bPct = (bw+bl)? bw/(bw+bl) : 0;
+      if(bPct!==aPct) return bPct-aPct;
+      if(b.season.w!==a.season.w) return b.season.w-a.season.w;
+      return teamResumeScore(b)-teamResumeScore(a);
+    });
+    const field = sorted.slice(0, Math.min(8, sorted.length));
+    const seeds = field.map((t,i)=>({seed:i+1, teamId:t.id}));
+    const qf = [
+      {a:seeds[0], b:seeds[7]},
+      {a:seeds[3], b:seeds[4]},
+      {a:seeds[2], b:seeds[5]},
+      {a:seeds[1], b:seeds[6]},
+    ].filter(x=>x.a && x.b);
+    S.post.confTourneys[conf] = { conf, seeds, rounds: { qf, sf:[], final:[] }, champion:null };
+  }
+}
+function simConfTourneys(){
+  const champs = [];
+  for(const [conf, T] of Object.entries(S.post.confTourneys)){
+    T.rounds.sf = [];
+    for(const m of T.rounds.qf){
+      const a = getTeam(m.a.teamId), b = getTeam(m.b.teamId);
+      const res = simNeutralGame(a,b);
+      const win = res.winId;
+      T.rounds.sf.push({a:{teamId:win}, b:{teamId:(win===a.id?b.id:a.id)}, res});
+    }
+    T.rounds.final = [];
+    const sf = T.rounds.sf;
+    for(let i=0;i<sf.length;i+=2){
+      const m1 = sf[i], m2 = sf[i+1];
+      if(!m2) continue;
+      const a = getTeam(m1.a.teamId), b = getTeam(m2.a.teamId);
+      const res = simNeutralGame(a,b);
+      const win = res.winId;
+      T.rounds.final.push({a:{teamId:win}, b:{teamId:(win===a.id?b.id:a.id)}, res});
+    }
+    const fm = T.rounds.final[0] || null;
+    if(fm){
+      const a = getTeam(fm.a.teamId), b = getTeam(fm.b.teamId);
+      const res = simNeutralGame(a,b);
+      T.champion = res.winId;
+      champs.push(res.winId);
+    } else if(T.seeds[0]) {
+      T.champion = T.seeds[0].teamId;
+      champs.push(T.champion);
+    }
+  }
+  S.post.autoBids = champs;
+}
+function findTeamInBracket(teamId, bracket){
+  for(const [region, obj] of Object.entries(bracket.regions)){
+    for(const m of obj.r64){
+      if(m.a?.teamId===teamId) return {region, seed:m.a.seed, oppId:m.b.teamId};
+      if(m.b?.teamId===teamId) return {region, seed:m.b.seed, oppId:m.a.teamId};
+    }
+  }
+  return null;
+}
+function buildNCAABracket(){
+  computeSOS();
+  const auto = new Set(S.post.autoBids || []);
+  const allTeams = S.league.teams.slice();
+  const ranked = allTeams.slice().sort((a,b)=>teamResumeScore(b)-teamResumeScore(a));
+
+  const field = [];
+  for(const id of auto){ field.push(getTeam(id)); }
+  for(const t of ranked){
+    if(field.length>=64) break;
+    if(auto.has(t.id)) continue;
+    field.push(t);
+  }
+  while(field.length<64) field.push(U.pick(allTeams));
+
+  const regions = ["East","West","South","Midwest"];
+  const sortedField = field.slice().sort((a,b)=>teamResumeScore(b)-teamResumeScore(a));
+  const seedsByRegion = {East:[],West:[],South:[],Midwest:[]};
+
+  for(let seedLine=1; seedLine<=16; seedLine++){
+    const slice = sortedField.slice((seedLine-1)*4, seedLine*4);
+    const order = (seedLine%2===1) ? regions : regions.slice().reverse();
+    for(let i=0;i<slice.length;i++){
+      seedsByRegion[order[i]].push({seed:seedLine, teamId:slice[i].id});
+    }
+  }
+  function regionR64(list){
+    const bySeed = {};
+    for(const x of list) bySeed[x.seed]=x;
+    const pairs = [[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]];
+    return pairs.map(([a,b])=>({a:bySeed[a], b:bySeed[b], res:null}));
+  }
+  const bracket = { regions: {}, rounds: { r64:[], r32:[], s16:[], e8:[], f4:[], nc:[] }, champ:null };
+  for(const r of regions){
+    bracket.regions[r] = { seeds: seedsByRegion[r], r64: regionR64(seedsByRegion[r]) };
+    bracket.rounds.r64.push(...bracket.regions[r].r64.map(m=>({region:r, ...m})));
+  }
+  S.post.bracket = bracket;
+
+  const my = getUserTeam();
+  if(my){
+    const slot = findTeamInBracket(my.id, bracket);
+    if(slot){
+      const opp = getTeam(slot.oppId);
+      queueModal({
+        type:"selection",
+        title:"SELECTION SUNDAY",
+        teamName: my.name,
+        region: slot.region,
+        seed: slot.seed,
+        opp: opp ? opp.name : "TBD",
+        line: `#${slot.seed} seed • ${slot.region} Region • vs ${opp?opp.name:"TBD"}`
+      });
+    }
+  }
+}
+function simNCAARound(prevMatches){
+  const winners = [];
+  for(const m of prevMatches){
+    const a = getTeam(m.a.teamId), b = getTeam(m.b.teamId);
+    const res = simNeutralGame(a,b);
+    m.res = res;
+    winners.push({ winId: res.winId, region: m.region });
+  }
+  return winners;
+}
+function makeMatchesFromWinners(prev){
+  const out = [];
+  for(let i=0;i<prev.length;i+=2){
+    const m1 = prev[i], m2 = prev[i+1];
+    if(!m2) continue;
+    out.push({ a:{teamId:m1.winId}, b:{teamId:m2.winId}, region: m1.region, res:null });
+  }
+  return out;
+}
+function playNCAATournamentWeek(weekIndex){
+  const b = S.post.bracket;
+  if(!b) return;
+  const r = weekIndex - GAME.NCAA_START_WEEK;
+  const my = getUserTeam();
+  const coach = S.userCoach;
+
+  if(r===0){
+    const winners = simNCAARound(b.rounds.r64);
+    b.rounds.r32 = makeMatchesFromWinners(winners);
+  } else if(r===1){
+    const winners = simNCAARound(b.rounds.r32);
+    b.rounds.s16 = makeMatchesFromWinners(winners);
+  } else if(r===2){
+    const winners = simNCAARound(b.rounds.s16);
+    b.rounds.e8 = makeMatchesFromWinners(winners);
+  } else if(r===3){
+    const winners = simNCAARound(b.rounds.e8);
+    const map = {East:null,West:null,South:null,Midwest:null};
+    for(const w of winners) map[w.region]=w.winId;
+    b.rounds.f4 = [
+      {a:{teamId:map.East}, b:{teamId:map.West}, region:"F4-1", res:null},
+      {a:{teamId:map.South}, b:{teamId:map.Midwest}, region:"F4-2", res:null},
+    ].filter(x=>x.a.teamId && x.b.teamId);
+  } else if(r===4){
+    const winners = simNCAARound(b.rounds.f4);
+    b.rounds.nc = makeMatchesFromWinners(winners.map(w=>({winId:w.winId, region:"NC"})));
+  } else if(r===5){
+    const m = b.rounds.nc[0];
+    if(m){
+      const a = getTeam(m.a.teamId), bb = getTeam(m.b.teamId);
+      const res = simNeutralGame(a,bb);
+      m.res = res;
+      b.champ = res.winId;
+      if(my){
+        if(b.champ===my.id){
+          coach.career.natties += 1;
+          coach.legacy += 100;
+          toast("CHAMPIONS!", `${my.name} wins it all!`, "good");
+        } else {
+          const champTeam = getTeam(b.champ);
+          toast("National Champion", `${champTeam?.name||"A team"} won the title.`, "warn");
+        }
+      }
+    }
+  }
+  if(my && coach){
+    const slot = findTeamInBracket(my.id, b);
+    if(slot){
+      if(r===0) coach.career.tourneyApps += 1;
+      if(r===3){
+        const inF4 = b.rounds.f4.some(mm=>mm.a.teamId===my.id || mm.b.teamId===my.id);
+        if(inF4) coach.career.finalFours += 1;
+      }
+    }
+  }
+}
+function isTeamAliveInBracket(teamId, bracket, weekIndex){
+  if(!bracket) return false;
+  const r = weekIndex - GAME.NCAA_START_WEEK;
+  if(r<=0) return bracket.rounds.r64.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  if(r===1) return bracket.rounds.r32.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  if(r===2) return bracket.rounds.s16.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  if(r===3) return bracket.rounds.e8.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  if(r===4) return bracket.rounds.f4.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  if(r===5) return bracket.rounds.nc.some(m=>m.a.teamId===teamId || m.b.teamId===teamId);
+  return false;
+}
+
+/* ---------- Goals ---------- */
+function setGoals(){
+  const c = S.userCoach;
+  const t = getUserTeam();
+  if(!c || !t) return;
+  const prest = t.prestige;
+  const winTarget = U.clamp(Math.round(10 + prest/10) + U.rint(-2,+2), 14, 28);
+  const confTarget = U.clamp(Math.round(7 + prest/14) + U.rint(-2,+2), 6, 16);
+
+  const options = [
+    {k:"wins", note:`Win ${winTarget}+ games`, winTarget},
+    {k:"conf", note:`Win ${confTarget}+ conference games`, confTarget},
+    {k:"def", note:`Hold opponents under 70 PPG (season avg)`, defPPG: 70},
+    {k:"make", note:`Make the NCAA Tournament`, makeTourney:true},
+  ];
+  let pick = options[0];
+  if(prest<60) pick = U.pick([options[0],options[1]]);
+  else if(prest<75) pick = U.pick([options[0],options[1],options[2]]);
+  else pick = U.pick(options);
+  c.goals = {type:"HC", ...pick};
+}
+function evalGoals(){
+  const c = S.userCoach;
+  const t = getUserTeam();
+  if(!c || !t || !c.goals) return;
+  let met=false;
+  if(c.goals.k==="wins") met = t.season.w >= c.goals.winTarget;
+  if(c.goals.k==="conf") met = t.season.confW >= c.goals.confTarget;
+  if(c.goals.k==="def"){
+    const g=t.season.games||1;
+    const ppg = t.season.pa/g;
+    met = ppg < c.goals.defPPG;
+  }
+  if(c.goals.k==="make") met = !!S.post?.madeTourney;
+
+  if(met){
+    c.prestige = U.clamp(c.prestige+3, 20, 99);
+    c.legacy += 25;
+    addXP(c, 160);
+    c.hotSeat = Math.max(0, c.hotSeat-1);
+    toast("Goals Met", "Prestige +3, XP gained.", "good");
+  } else {
+    c.prestige = U.clamp(c.prestige-2, 20, 99);
+    addXP(c, 60);
+    c.hotSeat += 1;
+    toast("Goals Missed", "Prestige -2, Hot Seat +1.", "warn");
+  }
+}
+
+/* ---------- Jobs ---------- */
+function makeContract(team){
+  const salaryM = Math.round((team.budget*0.14 + team.prestige*0.10 + 2.0) * 100) / 100;
+  const years = U.rint(3,6);
+  const buyoutM = Math.round(salaryM * years * 0.70 * 100) / 100;
+  return {salaryM, years, buyoutM};
+}
+function genJobOffers(){
+  const coach = S.userCoach, cur = getUserTeam();
+  if(!coach || !cur) return;
+  const mv = coach.prestige + (cur.season.w*1.2) + Math.round(coach.legacy*0.05) + (S.post?.tourneyWins||0)*8;
+  const teams = S.league.teams.filter(t=>t.id!==cur.id).sort(()=>Math.random()-0.5);
+  const offers = [];
+  for(const t of teams){
+    if(offers.length>=10) break;
+    const diff = t.prestige - cur.prestige;
+    const ok = (diff>=-28 && diff<=+22) || (t.prestige<=55 && Math.random()<0.12);
+    if(!ok) continue;
+    const chance = U.clamp(0.12 + (mv - t.prestige)*0.004 + Math.random()*0.12, 0.06, 0.55);
+    if(Math.random()>chance) continue;
+    offers.push({ id: U.uuid(), teamId: t.id, teamName: t.name, conf: t.conf, prestige: t.prestige, role: "HC", contract: makeContract(t) });
+  }
+  while(offers.length<3){
+    const t = U.pick(teams);
+    offers.push({ id:U.uuid(), teamId:t.id, teamName:t.name, conf:t.conf, prestige:t.prestige, role:"HC", contract: makeContract(t) });
+  }
+  S.jobs.offers = offers;
+}
+function acceptJob(offerId){
+  const offer = S.jobs.offers.find(o=>o.id===offerId);
+  const coach = S.userCoach;
+  if(!offer || !coach) return;
+  const team = getTeam(offer.teamId);
+  if(!team) return;
+
+  coach.contract = { ...offer.contract, teamId: team.id, teamName: team.name, role:"HC", startYear: S.year };
+  coach.hotSeat = 0;
+
+  S.userTeamId = team.id;
+  placeUserCoachOnTeam(team, coach);
+  setGoals();
+  toast("Job Accepted", `HC at ${team.name}`, "good");
+}
+
+/* ---------- Helpers ---------- */
+function getTeam(id){ return S.league.teams.find(t=>t.id===id); }
+function getUserTeam(){ return S?.userTeamId ? getTeam(S.userTeamId) : null; }
+function placeUserCoachOnTeam(team, coach){
+  team.staff.HC = coach;
+  if(!team.staff.A1) team.staff.A1 = { id:U.uuid(), name: genCoachName(), role:"A1", rep:{recruiting:U.rint(35,75)} };
+  if(!team.staff.A2) team.staff.A2 = { id:U.uuid(), name: genCoachName(), role:"A2", rep:{recruiting:U.rint(35,75)} };
+  recomputeScholarships(team);
+  computeNeeds(team);
+  computeGrades(team);
+}
+
+/* ---------- New Game / Year Reset ---------- */
+function resetSeasonStats(team){
+  for(const p of team.roster){ ensureStats(p); p.seasonStats = blankStats(); }
+}
+function newGame(){
+  const teams = buildLeague(TEAMSET_150);
+  S = {
+    meta:{version:"cbb-final"},
+    year: 2026,
+    phase: "setup",
+    weekIndex: 0,
+    league:{ teams, schedule: buildSeasonSchedule(teams) },
+    recruits: buildRecruitPool(GAME.RECRUIT_POOL),
+    portal:{ pool: [] },
+    jobs:{ offers: [] },
+    records: buildInitialRecords(),
+    post:{ confTourneys:{}, autoBids:[], bracket:null, madeTourney:false, tourneyWins:0 },
+    userCoach: null,
+    userTeamId: null,
+    settings:{
+      xpSpeed: 1.0,
+      skillPointRate: 1.0,
+      infiniteXP: false,
+      portalRate: 0.065,
+      cpuPortalMult: 1.0,
+      userPortalMult: 1.0,
+    },
+    flags:{ startedCareer:false },  // ✅ bottom-25 start rule
+    ui:{
+      rosterPos:"",
+      recruitFilters:{pos:"",state:"",stars:"",sort:"rank",targetsOnly:false, pitch:"brand"},
+      portalFilters:{pos:"",sort:"ovr"},
+      modalQueue: [],
+      lastRecap:null,
+      retention:{ attemptsUsed:0, atRisk:[] },
+    }
+  };
+}
+function resetForNewSeason(){
+  S.league.schedule = buildSeasonSchedule(S.league.teams);
+  S.recruits = buildRecruitPool(GAME.RECRUIT_POOL);
+  S.portal.pool = [];
+  S.jobs.offers = [];
+  S.ui.modalQueue = [];
+  S.ui.lastRecap = null;
+  S.ui.retention = { attemptsUsed:0, atRisk:[] };
+  S.post = { confTourneys:{}, autoBids:[], bracket:null, madeTourney:false, tourneyWins:0 };
+
+  for(const t of S.league.teams){
+    t.season = { w:0,l:0, confW:0, confL:0, pf:0, pa:0, games:0 };
+    t.recruiting.points = weeklyRecruitingPoints(t);
+    t.recruiting.spent = 0;
+    t.recruiting.offered = [];
+    t.recruiting.spentMap = {};
+    t.recruiting.commits = [];
+    t.recruiting.classSlots = 4;
+    recomputeScholarships(t);
+    computeNeeds(t);
+    computeGrades(t);
+    resetSeasonStats(t);
+  }
+
+  const my = getUserTeam();
+  if(my && S.userCoach){
+    upsertLegacyEntry(S.userCoach.name, my.name, calcLegacyScore(S.userCoach), `HC • ${my.conf}`);
+  }
+}
+
+/* ---------- AI Recruiting Week (league + assistants) ---------- */
+function applyDealbreakerDrift(){
+  const t = getUserTeam();
+  if(!t) return;
+  computeGrades(t);
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+    r.offers ??= [];
+    if(!r.offers.includes(t.id)) continue;
+    const ok = meetsDeal(t, r.dealbreaker);
+    if(!ok){
+      const drift = 3 + U.rint(0,4);
+      r.delta[t.id] = (r.delta[t.id]||0) - drift;
+      capMap(r.delta, 14);
+    }
+  }
+}
+function aiRecruitingWeek(){
+  const open = S.recruits.filter(r=>r.stage==="open");
+
+  for(const t of S.league.teams){
+    recomputeScholarships(t); computeNeeds(t); computeGrades(t);
+    t.recruiting.points = weeklyRecruitingPoints(t);
+    t.recruiting.spent = 0;
+
+    if(t.id===S.userTeamId) continue;
+
+    const targets = open.slice().sort(()=>Math.random()-0.5).slice(0, 90)
+      .sort((a,b)=>{
+        const na=(t.needs?.[a.pos]||0), nb=(t.needs?.[b.pos]||0);
+        if(nb!==na) return nb-na;
+        if(b.stars!==a.stars) return b.stars-a.stars;
+        return b.ovr-a.ovr;
+      }).slice(0,12);
+
+    for(const r of targets){
+      r.offers ??= [];
+      if(!r.offers.includes(t.id) && Math.random()<0.52){
+        r.offers.push(t.id);
+        if(r.offers.length>12) r.offers.length=12;
+      }
+      const avail = t.recruiting.points - t.recruiting.spent;
+      if(avail<=0) break;
+
+      const spend = Math.min(avail, Math.random()<0.45 ? U.rint(80,150) : U.rint(40,110));
+      t.recruiting.spent += spend;
+
+      const cur = interest(r, t, false);
+      const pitch = U.pick(r.motives);
+      const match = pitchFactor(r, t, pitch);
+      const ok = meetsDeal(t, r.dealbreaker);
+
+      const rep = (t.staff.HC.rep.recruiting + t.staff.A1.rep.recruiting + t.staff.A2.rep.recruiting)/3;
+      const eff = (0.040 + rep*0.00022) * (Math.random()<0.45?1.28:0.92) * match * (ok?1.0:0.70);
+      const gain = Math.round(spend * eff * (1 - cur/140)) + U.rint(-2,3);
+
+      r.delta[t.id] = (r.delta[t.id]||0) + gain;
+      capMap(r.delta, 14);
+    }
+  }
+
+  // user assistants recruit too (background)
+  const ut = getUserTeam();
+  if(ut){
+    const staffPts = Math.round(weeklyRecruitingPoints(ut)*0.70);
+    let spent=0;
+    const candidates = open.slice().sort(()=>Math.random()-0.5).slice(0, 140)
+      .sort((a,b)=>{
+        const na=(ut.needs?.[a.pos]||0), nb=(ut.needs?.[b.pos]||0);
+        if(nb!==na) return nb-na;
+        if(b.stars!==a.stars) return b.stars-a.stars;
+        return b.ovr-a.ovr;
+      }).slice(0, 16);
+
+    for(const r of candidates){
+      const avail = staffPts-spent;
+      if(avail<=0) break;
+
+      r.offers ??= [];
+      if(!r.offers.includes(ut.id) && Math.random()<0.62){
+        r.offers.push(ut.id);
+        if(r.offers.length>12) r.offers.length=12;
+      }
+
+      const spendPts = Math.min(avail, U.rint(50,130));
+      spent += spendPts;
+
+      const cur = interest(r, ut, true);
+      const pitch = U.pick(r.motives);
+      const match = pitchFactor(r, ut, pitch);
+      const ok = meetsDeal(ut, r.dealbreaker);
+      const rep = ((ut.staff.A1?.rep?.recruiting??55)+(ut.staff.A2?.rep?.recruiting??55))/2;
+      const perk = sumArchLevels(S.userCoach,"Recruiter")*0.006;
+
+      const eff = (0.040 + rep*0.00022 + perk) * match * (ok?1.0:0.70);
+      const gain = Math.round(spendPts * eff * (1 - cur/140)) + U.rint(-2,3);
+      r.delta[ut.id] = (r.delta[ut.id]||0) + gain;
+      capMap(r.delta, 14);
+    }
+  }
+
+  applyDealbreakerDrift();
+  applyScheduledVisitsForWeek();
+}
+
+/* ---------- Commitments + Signing ---------- */
+function resolveCommitments(){
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+    const ranked = rankTeams(r);
+    const leaderId = ranked[0].id;
+    const leaderTeam = getTeam(leaderId);
+    const leaderVal = ranked[0].val;
+    r.offers ??= [];
+
+    const hasOffer = r.offers.includes(leaderId);
+    const room = projectedRecruitSlots(leaderTeam) > 0;
+    const ok = meetsDeal(leaderTeam, r.dealbreaker);
+    if(!hasOffer || !room) continue;
+
+    let p=0;
+    if(S.phase==="season"){
+      const wk = S.weekIndex;
+      const late = wk>=10;
+      if(leaderVal>=72) p = 0.08 + (leaderVal-70)*0.006;
+      if(late && leaderVal>=66) p = 0.16 + (leaderVal-66)*0.007;
+    } else if(S.phase==="offseason"){
+      const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+      if(S.weekIndex===offStart+2 && leaderVal>=60) p = 0.22 + (leaderVal-60)*0.007;
+    }
+    if(!ok) p *= 0.45;
+
+    const my = getUserTeam();
+    if(my && leaderId===my.id){
+      const closer = S.userCoach.skillsTree.Recruiter.rec_close.lvl || 0;
+      p *= (1 + closer*0.10);
+    }
+
+    if(Math.random()<U.clamp(p,0,0.65)){
+      r.stage="committed";
+      r.committedTo = leaderId;
+      leaderTeam.recruiting.commits.push(r.id);
+
+      if(my){
+        const myRank = ranked.findIndex(x=>x.id===my.id)+1;
+        const myInt = interest(r, my, true);
+        if(leaderId===my.id){
+          toast("Commitment!", `${r.stars}★ ${r.pos} ${r.name} committed.`, "good");
+          queueModal({ type:"commit", title:"COMMITMENT!", teamName: my.name, recruit:{...r} });
+          recapCommitWon(r);
+        } else if(myRank>0 && myRank<=4 && myInt>=60){
+          toast("Lost Recruit", `${r.name} → ${leaderTeam.name}`, "bad");
+          recapCommitLost(r, leaderTeam.name);
+        }
+      }
+    }
+  }
+}
+function signAndProgress(){
+  for(const r of S.recruits){
+    if(r.stage!=="committed") continue;
+    const t = getTeam(r.committedTo);
+    r.stage="signed";
+    const arch = U.pick(["Shooter","Slasher","Playmaker","3&D","Rim Protector","Stretch Big","Balanced"]);
+    const p = makePlayer({pos:r.pos, year:"FR", ovr: U.clamp(r.ovr + U.rint(-3,+3), 50, 95), pot:r.pot, arch});
+    p.name = r.name;
+    ensureStats(p);
+    t.roster.push(p);
+  }
+
+  for(const t of S.league.teams){
+    t.yearlog.push({year:S.year, w:t.season.w, l:t.season.l});
+
+    t.roster = t.roster.filter(p=>p.year!=="SR");
+    for(const p of t.roster){
+      if(p.year==="FR") p.year="SO";
+      else if(p.year==="SO") p.year="JR";
+      else if(p.year==="JR") p.year="SR";
+      ensureStats(p);
+    }
+
+    const isUser = (t.id===S.userTeamId);
+    const hc = t.staff.HC;
+    const devBase = 1 + U.rint(0,2);
+    const devPerk = isUser ? ( (hc.skillsTree.Motivator.mot_dev.lvl||0)*0.8 + (hc.skillsTree.Motivator.mot_master.lvl||0)*1.2 ) : (sumArchLevels(hc,"Motivator")*0.35);
+    for(const p of t.roster){
+      const grow = devBase + Math.round(devPerk*0.6) + U.rint(0,1);
+      p.ovr = U.clamp(p.ovr + grow, 45, 99);
+    }
+
+    if(t.roster.length > GAME.MAX_SCHOLARSHIPS){
+      t.roster.sort((a,b)=>b.ovr-a.ovr);
+      t.roster = t.roster.slice(0, GAME.MAX_SCHOLARSHIPS);
+    }
+
+    recomputeScholarships(t);
+    computeNeeds(t);
+    computeGrades(t);
+
+    t.recruiting.offered=[];
+    t.recruiting.spentMap={};
+    t.recruiting.commits=[];
+    t.recruiting.classSlots=4;
+    t.recruiting.spent=0;
+
+    resetSeasonStats(t);
+  }
+
+  const team = getUserTeam();
+  const coach = S.userCoach;
+  if(team && coach){
+    maybeBreakRecord("coach","careerWins", coach.career.wins||0, coach.name, team.name);
+    maybeBreakRecord("coach","nationalTitles", coach.career.natties||0, coach.name, team.name);
+    maybeBreakRecord("coach","finalFours", coach.career.finalFours||0, coach.name, team.name);
+
+    for(const p of team.roster){
+      ensureStats(p);
+      const cs = p.careerStats;
+      maybeBreakRecord("player","careerPts", cs.pts||0, p.name, team.name);
+      maybeBreakRecord("player","careerReb", cs.reb||0, p.name, team.name);
+      maybeBreakRecord("player","careerAst", cs.ast||0, p.name, team.name);
+    }
+    upsertLegacyEntry(coach.name, team.name, calcLegacyScore(coach), `HC • ${team.conf}`);
+  }
+}
+
+/* ---------- Portal open helper ---------- */
+function portalPhaseOpen(){
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+  return (S.phase==="offseason" && (S.weekIndex===offStart || S.weekIndex===offStart+1));
+}
+
+/* ---------- Week Engine ---------- */
+function simRegularWeekGames(){
+  const sched = S.league.schedule[S.weekIndex-1];
+  if(!sched) return;
+  const my = getUserTeam();
+  let myGameCount = 0;
+
+  for(const g of sched.games){
+    if(g.played) continue;
+    const h = getTeam(g.home), a = getTeam(g.away);
+    const res = simGame(h,a);
+
+    g.played = true;
+    g.scoreH = res.scoreH;
+    g.scoreA = res.scoreA;
+
+    applyResult(h,a,res.scoreH,res.scoreA);
+
+    recomputeScholarships(h); recomputeScholarships(a);
+    computeNeeds(h); computeNeeds(a);
+    computeGrades(h); computeGrades(a);
+
+    if(my && (h.id===my.id || a.id===my.id)){
+      myGameCount++;
+      const myScore = (h.id===my.id) ? res.scoreH : res.scoreA;
+      const opScore = (h.id===my.id) ? res.scoreA : res.scoreH;
+      const opp = (h.id===my.id) ? a : h;
+      const tag = g.tag || `G${myGameCount}`;
+      const line = `${tag}: ${my.name} ${myScore}-${opScore} ${opp.name}`;
+      recapAddGame(line, tag);
+
+      const myBox = (h.id===my.id) ? res.boxH : res.boxA;
+      applyBoxToUserPlayers(my, myBox);
+
+      if(S.records){
+        S.records.gameLog.unshift({ year:S.year, week:S.weekIndex, tag, line, my: myBox, oppName: opp.name });
+        S.records.gameLog.splice(20);
+      }
+
+      const win = myScore>opScore;
+      if(win){ S.userCoach.career.wins++; addXP(S.userCoach, 26); toast("Win", line, "good"); }
+      else { S.userCoach.career.losses++; addXP(S.userCoach, 16); toast("Loss", line, "bad"); }
+    }
+  }
+
+  if(my){
+    const r = my.roster.slice();
+    for(const p of r) ensureStats(p);
+    const topPts = r.slice().sort((a,b)=>b.seasonStats.pts-a.seasonStats.pts)[0];
+    const topReb = r.slice().sort((a,b)=>b.seasonStats.reb-a.seasonStats.reb)[0];
+    const topAst = r.slice().sort((a,b)=>b.seasonStats.ast-a.seasonStats.ast)[0];
+    if(topPts) recapStar(`PTS: ${topPts.name} (${topPts.seasonStats.pts})`);
+    if(topReb) recapStar(`REB: ${topReb.name} (${topReb.seasonStats.reb})`);
+    if(topAst) recapStar(`AST: ${topAst.name} (${topAst.seasonStats.ast})`);
+  }
+}
+
+function advance(){
+  if(!S) return;
+  if(S.phase==="setup") return toast("Setup Required", "Create coach + pick team first.", "bad");
+  if(S.ui.modalQueue?.length) return;
+
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+
+  if(S.phase==="season" && S.weekIndex===0){
+    resetForNewSeason();
+    setGoals();
+    S.weekIndex = 1;
+    toast("Season Start", `Year ${S.year} begins.`, "good");
+    return;
+  }
+
+  if(S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS){
+    initWeekRecap();
+    aiRecruitingWeek();
+    simRegularWeekGames();
+    resolveCommitments();
+
+    S.weekIndex += 1;
+    if(S.weekIndex===GAME.CONF_TOURNEY_WEEK) toast("Postseason", "Conference tournaments are here.", "good");
+    return;
+  }
+
+  if(S.phase==="season" && S.weekIndex===GAME.CONF_TOURNEY_WEEK){
+    initWeekRecap();
+    buildConfTourneys();
+    simConfTourneys();
+    toast("Conference Champs", "Auto-bids locked in.", "good");
+    S.weekIndex = GAME.SELECTION_SUNDAY_WEEK;
+    return;
+  }
+
+  if(S.phase==="season" && S.weekIndex===GAME.SELECTION_SUNDAY_WEEK){
+    initWeekRecap();
+    buildNCAABracket();
+    const my = getUserTeam();
+    S.post.tourneyWins = 0;
+    if(my){
+      const slot = findTeamInBracket(my.id, S.post.bracket);
+      S.post.madeTourney = !!slot;
+      if(slot) toast("Made the Tournament!", `You're a #${slot.seed} seed in the ${slot.region} Region.`, "good");
+      else toast("Missed the Tournament", "No bid this year.", "warn");
+    }
+    S.weekIndex = GAME.NCAA_START_WEEK;
+    return;
+  }
+
+  if(S.phase==="season" && S.weekIndex>=GAME.NCAA_START_WEEK && S.weekIndex<GAME.NCAA_START_WEEK+GAME.NCAA_ROUNDS){
+    initWeekRecap();
+    const my = getUserTeam();
+    const b = S.post.bracket;
+    const beforeAlive = my ? isTeamAliveInBracket(my.id, b, S.weekIndex) : false;
+
+    playNCAATournamentWeek(S.weekIndex);
+
+    if(my && b){
+      const afterAlive = isTeamAliveInBracket(my.id, b, S.weekIndex+1);
+      if(beforeAlive && afterAlive) S.post.tourneyWins += 1;
+      if(beforeAlive && !afterAlive) toast("Tournament Exit", `${my.name} is out.`, "warn");
+    }
+
+    S.weekIndex += 1;
+
+    if(S.weekIndex===offStart){
+      S.phase="offseason";
+      buildRetentionList();
+      buildPortalPool();
+      genJobOffers();
+      const myTeam = getUserTeam();
+      if(myTeam){
+        myTeam.recruiting.points = weeklyRecruitingPoints(myTeam);
+        myTeam.recruiting.spent = 0;
+      }
+      toast("Offseason", "Jobs + Portal are live.", "good");
+    }
+    return;
+  }
+
+  if(S.phase==="offseason"){
+    const wk = S.weekIndex;
+
+    if(wk===offStart){
+      S.weekIndex = offStart+1;
+      toast("Offseason Week 2", "Portal continues.", "good");
+      return;
+    }
+    if(wk===offStart+1){
+      S.weekIndex = offStart+2;
+      toast("Offseason Week 3", "Late recruiting + visits.", "good");
+      return;
+    }
+    if(wk===offStart+2){
+      initWeekRecap();
+      aiRecruitingWeek();
+      resolveCommitments();
+      S.weekIndex = offStart+3;
+      toast("Offseason Week 4", "Signing + progression next.", "good");
+      return;
+    }
+    if(wk===offStart+3){
+      evalGoals();
+      signAndProgress();
+
+      S.year += 1;
+      S.phase = "season";
+      S.weekIndex = 0;
+
+      toast("New Year", `Welcome to ${S.year}.`, "good");
+      return;
+    }
+  }
+}
+
+/* ---------- Save/Load ---------- */
+async function save(){ if(S){ const ok = await STORE.set(GAME.SAVE_KEY, S); if(!ok) toast("Storage Full","Could not save.","bad"); } updateSubline(); }
+async function loadSave(){ return await STORE.get(GAME.SAVE_KEY); }
+async function hardReset(){ await STORE.del(GAME.SAVE_KEY); S=null; }
+
+/* ---------- Drawer ---------- */
+function drawerOpen(){ document.getElementById("drawer").classList.add("open"); }
+function drawerClose(){ document.getElementById("drawer").classList.remove("open"); }
+
+/* ---------- UI ---------- */
+const TABS = [
+  {id:"home", label:"Home", ico:"🏠"},
+  {id:"coach", label:"Coach", ico:"🧠"},
+  {id:"roster", label:"Roster", ico:"📋"},
+  {id:"schedule", label:"Schedule", ico:"🗓️"},
+  {id:"recruit", label:"Recruiting", ico:"⭐"},
+  {id:"portal", label:"Portal", ico:"🔁"},
+  {id:"staff", label:"Staff", ico:"👥"},
+  {id:"jobs", label:"Jobs", ico:"🎡"},
+  {id:"records", label:"Records", ico:"🏆"},
+  {id:"settings", label:"Settings", ico:"⚙️"},
+];
+let activeTab = "home";
+let S = null;
+
+function renderDrawerNav(){
+  const list = document.getElementById("navList");
+  if(!list) return;
+  list.innerHTML = TABS.map(t=>{
+    const a = (t.id===activeTab) ? "active" : "";
+    return `
+      <div class="navItem ${a}" data-act="tab" data-tab="${t.id}">
+        <div class="l"><span>${t.ico}</span><span>${U.safe(t.label)}</span></div>
+      </div>
+    `;
+  }).join("");
+}
+function updateSubline(){
+  const el = document.getElementById("subLine");
+  if(!S){ el.textContent="No save loaded."; return; }
+  const wk = weekName(S.weekIndex);
+  const team = getUserTeam();
+  const coach = S.userCoach;
+  if(team && coach){
+    el.textContent = `Year ${S.year} • ${wk} • ${team.name} (${team.season.w}-${team.season.l}) • HC`;
+  } else el.textContent = `Year ${S.year} • ${wk} • Setup`;
+}
+
+/* ---------- Overlay (modals) ---------- */
+function renderOverlay(){
+  const root = document.getElementById("overlayRoot");
+  root.innerHTML = "";
+  if(!S?.ui?.modalQueue?.length) return;
+  const m = S.ui.modalQueue[0];
+
+  if(m.type==="commit"){
+    const r = m.recruit;
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)} — ${U.safe(m.teamName)}</div>
+              <div class="subt">${"★".repeat(r.stars)} • ${U.safe(r.pos)} • OVR ${r.ovr} • ${U.safe(r.state)}</div>
+            </div>
+            <div class="logo">🎓</div>
+          </div>
+          <div class="sep"></div>
+          <div class="row">
+            <span class="chip"><span class="k">RECRUIT</span>${U.safe(r.name)}</span>
+            <span class="chip"><span class="k">DEAL</span>${U.safe(r.dealbreaker.toUpperCase())}</span>
+          </div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="selection"){
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)}</div>
+              <div class="subt">${U.safe(m.teamName)} • ${U.safe(m.line)}</div>
+            </div>
+            <div class="logo">🏆</div>
+          </div>
+          <div class="sep"></div>
+          <div class="row">
+            <span class="chip"><span class="k">SEED</span>#${m.seed}</span>
+            <span class="chip"><span class="k">REGION</span>${U.safe(m.region)}</span>
+            <span class="chip"><span class="k">OPP</span>${U.safe(m.opp)}</span>
+          </div>
+          <div class="sep"></div>
+          <button class="btnAccent" style="width:100%" data-act="modal_ack">Let’s Go</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="scheduleVisit"){
+    const r = S.recruits.find(x=>x.id===m.recruitId);
+    const team = getUserTeam();
+    if(!r || !team){
+      root.innerHTML = `<div class="overlay"><div class="modal"><div class="muted">Missing data.</div><div class="sep"></div><button class="btnWarn" style="width:100%" data-act="modal_ack">Close</button></div></div>`;
+      return;
+    }
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">Schedule Official Visit</div>
+              <div class="subt">${"★".repeat(r.stars)} • ${r.pos} • OVR ${r.ovr} • Cost ${m.cost} pts</div>
+            </div>
+            <div class="logo">🚌</div>
+          </div>
+          <div class="sep"></div>
+
+          <label>Choose Visit Week</label>
+          <select id="visit_week_sel">
+            ${m.weeks.map(w=>`<option value="${w}">${U.safe(weekName(w))}</option>`).join("")}
+          </select>
+
+          <label>Pitch Focus</label>
+          <select id="visit_pitch_sel">
+            ${MOTIVES.map(k=>`<option value="${k}" ${k===m.pitch?"selected":""}>${k.toUpperCase()}</option>`).join("")}
+          </select>
+
+          <div class="sep"></div>
+          <div class="row">
+            <button class="btnGood" style="flex:1" data-act="visit_confirm" data-rid="${r.id}">Confirm</button>
+            <button class="btnDanger" style="flex:1" data-act="modal_ack">Cancel</button>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+}
+
+/* ---------- Views ---------- */
+function renderWeeklyRecapCard(){
+  const rec = S.ui.lastRecap;
+  if(!rec) return "";
+  const games = rec.games.length ? rec.games.map(x=>`<div class="mini">${U.safe(x.line)}</div>`).join("") : `<div class="mini muted">No user games this week.</div>`;
+  const won = rec.commitsWon.length ? rec.commitsWon.map(x=>`<div class="mini">✅ ${"★".repeat(x.stars)} ${x.pos} ${U.safe(x.name)} (OVR ${x.ovr})</div>`).join("") : `<div class="mini muted">No commits won.</div>`;
+  const lost = rec.commitsLost.length ? rec.commitsLost.map(x=>`<div class="mini">❌ ${"★".repeat(x.stars)} ${x.pos} ${U.safe(x.name)} → <span class="muted">${U.safe(x.to)}</span></div>`).join("") : `<div class="mini muted">No commits lost.</div>`;
+  const vis = rec.visits.length ? rec.visits.map(x=>`<div class="mini">🚌 ${U.safe(x.name)} (+${x.gain})</div>`).join("") : `<div class="mini muted">No visits completed.</div>`;
+  const stars = rec.stars.length ? rec.stars.map(s=>`<div class="mini">⭐ ${U.safe(s)}</div>`).join("") : `<div class="mini muted">—</div>`;
+
+  return `
+    <div class="card" style="margin-bottom:12px; border-color:rgba(99,179,255,.42); background: rgba(18,28,43,.82)">
+      <div class="rowBetween">
+        <h2>Weekly Recap</h2>
+        <span class="badge bAcc">${U.safe(rec.weekName)} • ${rec.year}</span>
+      </div>
+      <div class="sep"></div>
+
+      <div class="twoCol">
+        <div><b>Games</b><div style="margin-top:6px">${games}</div></div>
+        <div><b>Stars</b><div style="margin-top:6px">${stars}</div></div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div><b>Commits Won</b><div style="margin-top:6px">${won}</div></div>
+        <div><b>Commits Lost</b><div style="margin-top:6px">${lost}</div></div>
+      </div>
+
+      <div class="sep"></div>
+      <div><b>Visits</b><div style="margin-top:6px">${vis}</div></div>
+    </div>
+  `;
+}
+
+function renderHome(){
+  if(!S.userCoach || !S.userTeamId){
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Create Head Coach</h2>
+          <label>Coach Name</label>
+          <input id="coach_name" placeholder="Your coach name"/>
+          <div class="sep"></div>
+          <button class="btnAccent" data-act="create_coach">Create Coach</button>
+          <div class="hint">Career start rule: you must begin with a Bottom-25 program.</div>
+        </div>
+
+        <div class="card">
+          <h2>Select Team</h2>
+          <label>Conference</label>
+          <select id="team_conf"><option value="">All</option>${TEAMSET_150.conferences.map(c=>`<option value="${U.safe(c.name)}">${U.safe(c.name)}</option>`).join("")}</select>
+          <label>Search</label>
+          <input id="team_search" placeholder="Type a school name"/>
+          <div class="sep"></div>
+          <button class="btnGood" data-act="team_picker">Pick Team</button>
+          <div class="hint">Bottom-25 restriction applies until you select your first team.</div>
+        </div>
+      </div>
+    `;
+  }
+
+  const t = getUserTeam();
+  const c = S.userCoach;
+  recomputeScholarships(t);
+  computeNeeds(t);
+  computeGrades(t);
+
+  const wk = weekName(S.weekIndex);
+  const remain = t.recruiting.points - t.recruiting.spent;
+
+  const pf = t.season.games ? (t.season.pf/t.season.games).toFixed(1) : "—";
+  const pa = t.season.games ? (t.season.pa/t.season.games).toFixed(1) : "—";
+
+  const projSlots = projectedRecruitSlots(t);
+
+  return `
+    ${renderWeeklyRecapCard()}
+
+    <div class="grid">
+      <div class="card">
+        <div class="rowBetween">
+          <h2>Program Hub</h2>
+          <span class="badge bAcc">${U.safe(wk)}</span>
+        </div>
+        <div class="row">
+          <span class="chip"><span class="k">TEAM</span>${U.safe(t.name)}</span>
+          <span class="chip"><span class="k">CONF</span>${U.safe(t.conf)}</span>
+          <span class="chip"><span class="k">REC</span>${t.season.w}-${t.season.l}</span>
+          <span class="chip"><span class="k">OVR</span>${teamAvgOVR(t)}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">PPG</span>${pf}</span>
+          <span class="chip"><span class="k">OPP</span>${pa}</span>
+          <span class="chip"><span class="k">PTS</span>${remain}/${t.recruiting.points}</span>
+        </div>
+        <div class="row" style="margin-top:8px">
+          <span class="badge bAcc">SCH NOW: ${t.scholarshipsNow}</span>
+          <span class="badge bAcc2">SCH PROJ: ${t.scholarshipsProjected}</span>
+          <span class="badge bGood">PROJ SLOTS: ${projSlots}</span>
+        </div>
+        <div class="hint">Recruiting uses projected scholarships (open now + graduating seniors − commits).</div>
+      </div>
+
+      <div class="card">
+        <h2>Coach + Goal</h2>
+        <div class="row">
+          <span class="chip"><span class="k">COACH</span>${U.safe(c.name)}</span>
+          <span class="chip"><span class="k">PREST</span>${c.prestige}</span>
+          <span class="chip"><span class="k">HOT</span>${c.hotSeat}</span>
+          <span class="chip"><span class="k">SP</span>${S.settings.infiniteXP ? "∞" : c.skillPoints}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">${c.goals ? U.safe(c.goals.note) : "Goals set at season start."}</div>
+        <div class="sep"></div>
+        <div class="muted mini">
+          Grades: Brand ${t.grades.brand} • Facilities ${t.grades.facilities} • Champ ${t.grades.champ} • Pro ${t.grades.pro} • Stability ${t.grades.stability} • PT ${t.grades.playingTime}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCoach(){
+  const c = S.userCoach;
+  if(!c) return `<div class="card"><h2>Coach</h2><div class="muted">Create your coach first.</div></div>`;
+
+  const xpPct = Math.round((c.xp/100)*100);
+  const xpBar = `<div class="progress"><div class="bar" style="width:${xpPct}%;"></div></div>`;
+
+  function renderArch(arch){
+    const locked = !archUnlocked(c, arch);
+    return `
+      <div class="sep"></div>
+      <div class="rowBetween">
+        <h2>${U.safe(arch)} ${locked?'<span class="badge bWarn">Locked</span>':''}</h2>
+        <span class="badge bAcc2">Levels: ${sumArchLevels(c, arch)}</span>
+      </div>
+
+      <div class="list">
+        ${(SKILL_NODES[arch]||[]).map(n=>{
+          const st = c.skillsTree[arch][n.key];
+          const cost = nodeCost(arch, n.key, st.lvl);
+          const dis = (locked || (st.lvl>=st.max) || (!S.settings.infiniteXP && c.skillPoints < cost)) ? "disabled" : "";
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${U.safe(n.name)} <span class="badge bAcc2">Tier ${n.tier}</span></div>
+                  <div class="itemMeta">${U.safe(n.desc)} • Lv ${st.lvl}/${st.max}</div>
+                </div>
+                <button class="btnAccent" data-act="perk" data-arch="${U.safe(arch)}" data-key="${U.safe(n.key)}" ${dis}>Cost ${cost}</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>${U.safe(c.name)}</h2>
+        <div class="row">
+          <span class="chip"><span class="k">PREST</span>${c.prestige}</span>
+          <span class="chip"><span class="k">LEGACY</span>${c.legacy}</span>
+          <span class="chip"><span class="k">SP</span>${S.settings.infiniteXP ? "∞" : c.skillPoints}</span>
+          <span class="chip"><span class="k">XP SPD</span>${xpGainMultiplier()}x</span>
+          <span class="chip"><span class="k">SP RATE</span>${skillPointRate()}x</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">XP</div>
+        ${xpBar}
+        <div class="muted mini">${S.settings.infiniteXP ? "∞ (Instant Max)" : (c.xp+"/100")}</div>
+        <div class="sep"></div>
+        <div class="muted mini">
+          Unlock: Program Builder requires Recruiter ≥ 6 and (Motivator ≥ 4 OR Tactician ≥ 4).
+          CEO requires total levels ≥ 18 and (Natty ≥ 1 OR Final Four ≥ 2).
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Skill Tree</h2>
+        <div class="muted mini">Costs scale by tier and level.</div>
+        ${renderArch("Recruiter")}
+        ${renderArch("Motivator")}
+        ${renderArch("Tactician")}
+        ${renderArch("Program Builder")}
+        ${renderArch("CEO")}
+      </div>
+    </div>
+  `;
+}
+
+function renderRoster(){
+  const t = getUserTeam();
+  if(!t) return `<div class="card"><h2>Roster</h2><div class="muted">Pick a team first.</div></div>`;
+  recomputeScholarships(t);
+  computeNeeds(t);
+
+  const pos = S.ui.rosterPos || "";
+  let rows = t.roster.slice();
+  if(pos) rows = rows.filter(p=>p.pos===pos);
+  rows.sort((a,b)=>a.pos.localeCompare(b.pos)||b.ovr-a.ovr);
+
+  const needBadges = GAME.POS.map(p=>{
+    const n = t.needs[p]||0;
+    const badge = n>=2 ? "bBad" : (n===1 ? "bWarn" : "bGood");
+    return `<span class="badge ${badge}">${p}: ${n}</span>`;
+  }).join(" ");
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>${U.safe(t.name)} Roster</h2>
+        <span class="badge bAcc">Roster ${t.roster.length}/13</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>View by Position</label>
+          <select id="rv_pos">
+            <option value="">All Positions</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+          <div class="row" style="margin-top:10px">
+            <button class="btnAccent" data-act="rv_apply">Apply</button>
+            <button data-act="rv_clear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label>Team Needs</label>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">${needBadges}</div>
+          <div class="divider"></div>
+          <div class="row" style="gap:8px">
+            <span class="badge bAcc">SCH NOW: ${t.scholarshipsNow}</span>
+            <span class="badge bAcc2">SCH PROJ: ${t.scholarshipsProjected}</span>
+            <span class="badge bGood">PROJ SLOTS: ${projectedRecruitSlots(t)}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="list">
+        ${rows.map(p=>{
+          ensureStats(p);
+          const s = p.seasonStats;
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle"><span class="badge bAcc2">${p.pos}</span> <span class="badge bAcc">OVR ${p.ovr}</span> ${U.safe(p.name)}</div>
+                  <div class="itemMeta">${p.year} • ${U.safe(p.arch)} • GP ${s.gp}</div>
+                </div>
+              </div>
+              <div class="itemStats">
+                <span class="statPill"><span class="k">PTS</span>${U.fmt(s.pts)}</span>
+                <span class="statPill"><span class="k">REB</span>${U.fmt(s.reb)}</span>
+                <span class="statPill"><span class="k">AST</span>${U.fmt(s.ast)}</span>
+                <span class="statPill"><span class="k">STL</span>${U.fmt(s.stl)}</span>
+                <span class="statPill"><span class="k">BLK</span>${U.fmt(s.blk)}</span>
+                <span class="statPill"><span class="k">TOV</span>${U.fmt(s.tov)}</span>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderSchedule(){
+  const t = getUserTeam();
+  if(!t) return `<div class="card"><h2>Schedule</h2><div class="muted">Pick a team first.</div></div>`;
+
+  const items=[];
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const sched = S.league.schedule[w-1];
+    const games = (sched?.games||[]).filter(x=>x.home===t.id || x.away===t.id);
+    if(!games.length){ items.push({w, lines:["BYE"], res:["—"]}); continue; }
+    const lines = games.map(g=>{
+      const home = getTeam(g.home), away = getTeam(g.away);
+      const opp = (g.home===t.id) ? `${away.name} (H)` : `${home.name} (A)`;
+      const res = g.played ? ((g.home===t.id)? `${g.scoreH}-${g.scoreA}` : `${g.scoreA}-${g.scoreH}`) : "—";
+      return {opp, res, tag:g.tag};
+    });
+    items.push({w, lines: lines.map(x=>`${x.tag}: ${x.opp}`), res: lines.map(x=>x.res)});
+  }
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>${U.safe(t.name)} Schedule (Year ${S.year})</h2>
+        <span class="badge bAcc">30 games • 2/week</span>
+      </div>
+      <div class="sep"></div>
+      <div class="list">
+        ${items.map(x=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div class="itemTitle">Week ${x.w}</div>
+              <span class="badge bAcc2">${U.safe(weekName(x.w))}</span>
+            </div>
+            <div class="divider"></div>
+            ${x.lines.map((l,i)=>`
+              <div class="rowBetween" style="gap:8px">
+                <div class="mini">${U.safe(l)}</div>
+                <div class="badge bAcc">${U.safe(x.res[i]||"—")}</div>
+              </div>
+            `).join("")}
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecruiting(){
+  const t = getUserTeam();
+  const c = S.userCoach;
+  if(!t || !c) return `<div class="card"><h2>Recruiting</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+  const hsOpen = (S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS);
+  const lateOpen = (S.phase==="offseason" && S.weekIndex===offStart+2);
+  if(!hsOpen && !lateOpen) return `<div class="card"><h2>Recruiting</h2><div class="muted">Recruiting runs Weeks 1–15. Late recruiting runs Offseason Wk3.</div></div>`;
+
+  recomputeScholarships(t); computeNeeds(t); computeGrades(t);
+
+  const f = S.ui.recruitFilters;
+  const remain = t.recruiting.points - t.recruiting.spent;
+  const projSlots = projectedRecruitSlots(t);
+
+  let list = S.recruits.filter(r=>r.stage==="open");
+  if(f.targetsOnly){
+    const offeredSet = new Set(t.recruiting.offered||[]);
+    list = list.filter(r=>offeredSet.has(r.id));
+  }
+  if(f.pos) list = list.filter(r=>r.pos===f.pos);
+  if(f.state) list = list.filter(r=>r.state===f.state);
+  if(f.stars) list = list.filter(r=>r.stars>=parseInt(f.stars,10));
+
+  if(f.sort==="ovr") list.sort((a,b)=>b.ovr-a.ovr);
+  else if(f.sort==="stars") list.sort((a,b)=>b.stars-a.stars || b.ovr-a.ovr);
+  else {
+    list.sort((a,b)=>{
+      const ra = rankTeams(a).findIndex(x=>x.id===t.id)+1;
+      const rb = rankTeams(b).findIndex(x=>x.id===t.id)+1;
+      return ra-rb;
+    });
+  }
+  list = list.slice(0, 90);
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Recruiting Board</h2>
+        <span class="badge bAcc">Points ${remain}/${t.recruiting.points}</span>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <span class="badge bAcc">SCH NOW: ${t.scholarshipsNow}</span>
+        <span class="badge bAcc2">SCH PROJ: ${t.scholarshipsProjected}</span>
+        <span class="badge bGood">PROJ SLOTS: ${projSlots}</span>
+        <span class="badge bWarn">COMMITS: ${(t.recruiting.commits||[]).length}</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>Position</label>
+          <select id="rf_pos">
+            <option value="">All</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${f.pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>State</label>
+          <select id="rf_state">
+            <option value="">All</option>
+            ${GAME.STATES.map(s=>`<option value="${s}" ${f.state===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Min Stars</label>
+          <select id="rf_stars">
+            <option value="">Any</option>
+            ${[1,2,3,4,5].map(x=>`<option value="${x}" ${f.stars==x?"selected":""}>${x}★+</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="rf_sort">
+            <option value="rank" ${f.sort==="rank"?"selected":""}>Your Rank</option>
+            <option value="ovr" ${f.sort==="ovr"?"selected":""}>OVR</option>
+            <option value="stars" ${f.sort==="stars"?"selected":""}>Stars</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px; align-items:flex-end">
+        <div style="flex:1; min-width:220px">
+          <label>Targets</label>
+          <select id="rf_targets">
+            <option value="0" ${!f.targetsOnly?"selected":""}>All recruits</option>
+            <option value="1" ${f.targetsOnly?"selected":""}>Targets only (Offered)</option>
+          </select>
+        </div>
+        <div style="flex:1; min-width:220px">
+          <label>Pitch</label>
+          <select id="rf_pitch">
+            ${MOTIVES.map(k=>`<option value="${k}" ${f.pitch===k?"selected":""}>${k.toUpperCase()}</option>`).join("")}
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button data-act="rf_apply" class="btnAccent">Apply Filters</button>
+        <button data-act="rf_clear">Clear</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="list">
+        ${list.map(r=>{
+          const ranked = rankTeams(r);
+          const myRank = ranked.findIndex(x=>x.id===t.id)+1;
+          const myInt = interest(r, t, true);
+          const leaderTeam = getTeam(ranked[0].id);
+
+          const offered = hasUserOffer(t, r);
+          const scheduledWeek = r.visitScheduled?.[t.id];
+          const visited = !!r.visitedBy?.[t.id];
+
+          const ok = meetsDeal(t, r.dealbreaker);
+          const dbBadge = ok ? "bGood" : "bBad";
+
+          const visitText = visited
+            ? `Visited`
+            : (scheduledWeek!=null ? `Scheduled: ${weekName(scheduledWeek)}` : `Not Scheduled`);
+
+          const offerDisabled = offered || !canOfferRecruit(t);
+          const offerLabel = offered ? "Offered" : "Offer";
+
+          const canScheduleVisit = (!visited && scheduledWeek==null && remain>=ACTIONS.visit.cost && offered);
+
+          const motives = r.motives.map(k=>`${k.toUpperCase()}(${t.grades[k]||"F"})`).join(" • ");
+
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${"★".repeat(r.stars)} <span class="badge bAcc">OVR ${r.ovr}</span> ${U.safe(r.name)}</div>
+                  <div class="itemMeta">
+                    ${r.pos} • ${r.state} • Your Rank #${myRank} • Leader: ${U.safe(leaderTeam?.name||"—")}
+                  </div>
+                </div>
+                <span class="badge bAcc2">${r.pos}</span>
+              </div>
+
+              <div style="margin-top:8px">
+                <div class="progress"><div class="bar" style="width:${myInt}%;"></div></div>
+                <div class="itemMeta">Interest: ${myInt}/100</div>
+              </div>
+
+              <div class="divider"></div>
+
+              <div class="itemMeta">Motives: ${U.safe(motives)}</div>
+              <div class="itemMeta" style="margin-top:6px">
+                <span class="badge ${dbBadge}">DEAL: ${U.safe(r.dealbreaker.toUpperCase())} (${U.safe(t.grades[r.dealbreaker]||"F")})</span>
+                <span class="badge bAcc2">${U.safe(visitText)}</span>
+              </div>
+
+              <div class="actionLine">
+                <button data-act="offer" data-id="${r.id}" ${offerDisabled?"disabled":""}>${offerLabel}</button>
+                <button class="btnAccent" data-act="sell" data-id="${r.id}" data-kind="soft" ${remain<ACTIONS.soft.cost?"disabled":""}>Soft</button>
+                <button class="btnWarn" data-act="sell" data-id="${r.id}" data-kind="hard" ${remain<ACTIONS.hard.cost?"disabled":""}>Hard</button>
+                <button data-act="sell" data-id="${r.id}" data-kind="sway" ${remain<ACTIONS.sway.cost?"disabled":""}>Sway</button>
+                <button class="btnGood" data-act="sell" data-id="${r.id}" data-kind="visit" ${canScheduleVisit?"":"disabled"}>Visit</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+
+      <div class="hint">Offer/actions are synced; you won’t get false “offer needed” blocks.</div>
+    </div>
+  `;
+}
+
+function renderPortal(){
+  const t = getUserTeam();
+  const c = S.userCoach;
+  if(!t || !c) return `<div class="card"><h2>Portal</h2><div class="muted">Finish setup first.</div></div>`;
+  const open = portalPhaseOpen();
+  if(!open) return `<div class="card"><h2>Portal</h2><div class="muted">Portal is open Offseason Week 1–2.</div></div>`;
+
+  recomputeScholarships(t); computeNeeds(t); computeGrades(t);
+
+  const f = S.ui.portalFilters;
+  const remain = t.recruiting.points - t.recruiting.spent;
+
+  let list = S.portal.pool.slice();
+  if(f.pos) list = list.filter(p=>p.pos===f.pos);
+
+  if(f.sort==="ovr") list.sort((a,b)=>b.ovr-a.ovr);
+  else list.sort((a,b)=>portalInterest(b,t,true)-portalInterest(a,t,true));
+  list = list.slice(0, 70);
+
+  const atRiskIds = new Set(S.ui.retention.atRisk||[]);
+  const atRisk = t.roster.filter(p=>atRiskIds.has(p.id));
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Transfer Portal</h2>
+        <span class="badge bAcc">Points ${remain}/${t.recruiting.points}</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="itemCard" style="border-color:rgba(181,140,255,.45)">
+        <div class="rowBetween">
+          <div>
+            <b>Retention</b>
+            <div class="muted mini">Attempts: ${S.ui.retention.attemptsUsed}/${persuasionAttemptsMax()}</div>
+          </div>
+          <span class="badge bAcc2">${U.safe(weekName(S.weekIndex))}</span>
+        </div>
+        <div class="divider"></div>
+
+        <div class="list">
+          ${atRisk.length ? atRisk.map(p=>`
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${U.safe(p.name)} <span class="badge bAcc2">${p.pos}</span> <span class="badge bAcc">OVR ${p.ovr}</span></div>
+                  <div class="itemMeta">${p.year} • At risk of transfer</div>
+                </div>
+              </div>
+              <div class="actionLine">
+                <button class="btnGood" data-act="persuade" data-id="${p.id}">Persuade</button>
+              </div>
+            </div>
+          `).join("") : `<div class="muted">No major retention threats right now.</div>`}
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>Position</label>
+          <select id="pf_pos">
+            <option value="">All</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${f.pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="pf_sort">
+            <option value="ovr" ${f.sort==="ovr"?"selected":""}>OVR</option>
+            <option value="interest" ${f.sort==="interest"?"selected":""}>Interest</option>
+          </select>
+        </div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button data-act="pf_apply" class="btnAccent">Apply</button>
+        <button data-act="pf_clear">Clear</button>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="list">
+        ${list.map(p=>{
+          const myInt = portalInterest(p,t,true);
+          const from = getTeam(p.portalFrom)?.name || "—";
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${U.safe(p.name)} <span class="badge bAcc2">${p.pos}</span> <span class="badge bAcc">OVR ${p.ovr}</span></div>
+                  <div class="itemMeta">${p.year} • From: ${U.safe(from)}</div>
+                </div>
+              </div>
+              <div style="margin-top:8px">
+                <div class="progress"><div class="bar" style="width:${myInt}%;"></div></div>
+                <div class="itemMeta">Interest: ${myInt}/100</div>
+              </div>
+              <div class="actionLine">
+                <button data-act="ppts" data-id="${p.id}" data-pts="75" ${remain<75?"disabled":""}>+75</button>
+                <button data-act="ppts" data-id="${p.id}" data-pts="125" ${remain<125?"disabled":""}>+125</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderStaff(){
+  const t = getUserTeam();
+  if(!t) return `<div class="card"><h2>Staff</h2><div class="muted">Pick a team first.</div></div>`;
+  return `
+    <div class="card">
+      <h2>Staff</h2>
+      <div class="sep"></div>
+      <div class="list">
+        <div class="itemCard"><div class="itemTitle">HC</div><div class="itemMeta">${U.safe(t.staff.HC.name)} <span class="badge bAcc">YOU</span></div></div>
+        <div class="itemCard"><div class="itemTitle">A1</div><div class="itemMeta">${U.safe(t.staff.A1.name)}</div></div>
+        <div class="itemCard"><div class="itemTitle">A2</div><div class="itemMeta">${U.safe(t.staff.A2.name)}</div></div>
+      </div>
+      <div class="hint">Assistants recruit weekly (background).</div>
+    </div>
+  `;
+}
+
+function renderJobs(){
+  const c = S.userCoach;
+  const t = getUserTeam();
+  if(!c || !t) return `<div class="card"><h2>Jobs</h2><div class="muted">Finish setup first.</div></div>`;
+  const offStart = GAME.NCAA_START_WEEK + GAME.NCAA_ROUNDS;
+  const open = (S.phase==="offseason" && S.weekIndex===offStart);
+  if(!open) return `<div class="card"><h2>Jobs</h2><div class="muted">Job offers appear Offseason Week 1.</div></div>`;
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Job Carousel</h2>
+        <span class="badge bAcc">${U.safe(weekName(S.weekIndex))}</span>
+      </div>
+      <div class="sep"></div>
+      <div class="list">
+        ${S.jobs.offers.map(o=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${U.safe(o.teamName)}</div>
+                <div class="itemMeta">${U.safe(o.conf)} • Prest ${o.prestige}</div>
+                <div class="itemMeta">$${o.contract.salaryM}M • ${o.contract.years}y • Buyout $${o.contract.buyoutM}M</div>
+              </div>
+              <button class="btnGood" data-act="accept_job" data-id="${o.id}">Accept</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecords(){
+  const t = getUserTeam();
+  const c = S.userCoach;
+  if(!t || !c) return `<div class="card"><h2>Records</h2><div class="muted">Finish setup first.</div></div>`;
+  if(!S.records) S.records = buildInitialRecords();
+
+  const myLegacy = calcLegacyScore(c);
+  const legacyList = (S.records.legacy||[]).slice().sort((a,b)=>b.legacy-a.legacy);
+
+  const coachCards = (S.records.coaches||[]).map(r=>`
+    <div class="itemCard">
+      <div class="itemTitle">${U.safe(r.label)}</div>
+      <div class="itemMeta"><b>${U.fmt(r.value||0)}</b> • ${U.safe(r.holder||"—")}</div>
+      <div class="itemMeta">${U.safe(r.detail||"")}</div>
+    </div>
+  `).join("");
+
+  const playerCards = (S.records.players||[]).map(r=>`
+    <div class="itemCard">
+      <div class="itemTitle">${U.safe(r.label)}</div>
+      <div class="itemMeta"><b>${U.fmt(r.value||0)}</b> • ${U.safe(r.holder||"—")}</div>
+      <div class="itemMeta">${U.safe(r.detail||"")}</div>
+    </div>
+  `).join("");
+
+  const legacyCards = legacyList.slice(0,30).map((x,i)=>`
+    <div class="itemCard">
+      <div class="itemTop">
+        <div>
+          <div class="itemTitle">#${i+1} ${U.safe(x.name)}</div>
+          <div class="itemMeta">${U.safe(x.school||"")} • ${U.safe(x.note||"")}</div>
+        </div>
+        <span class="badge ${x.name===c.name ? "bGood":"bAcc"}">${U.fmt(x.legacy||0)}</span>
+      </div>
+    </div>
+  `).join("");
+
+  const gl = (S.records.gameLog||[]).slice(0,20);
+  const gameCards = gl.length ? gl.map(g=>`
+    <div class="itemCard">
+      <div class="itemTitle">${g.year} • Week ${g.week} • ${U.safe(g.tag||"")}</div>
+      <div class="itemMeta"><b>${U.safe(g.line||"")}</b></div>
+      <div class="itemStats">
+        <span class="statPill"><span class="k">PTS</span>${U.fmt(g.my?.pts||0)}</span>
+        <span class="statPill"><span class="k">REB</span>${U.fmt(g.my?.reb||0)}</span>
+        <span class="statPill"><span class="k">AST</span>${U.fmt(g.my?.ast||0)}</span>
+        <span class="statPill"><span class="k">TOV</span>${U.fmt(g.my?.tov||0)}</span>
+      </div>
+    </div>
+  `).join("") : `<div class="muted">No games yet.</div>`;
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>Coach Record Book</h2>
+        <div class="sep"></div>
+        <div class="list">${coachCards}</div>
+
+        <div class="sep"></div>
+        <h2>Player Record Book</h2>
+        <div class="sep"></div>
+        <div class="list">${playerCards}</div>
+
+        <div class="sep"></div>
+        <h2>Recent Game Log (Your Team)</h2>
+        <div class="sep"></div>
+        <div class="list">${gameCards}</div>
+      </div>
+
+      <div class="card">
+        <h2>Legacy Leaderboard (GOAT Race)</h2>
+        <div class="row" style="margin-top:6px">
+          <span class="chip"><span class="k">YOU</span>${U.safe(c.name)}</span>
+          <span class="chip"><span class="k">SCHOOL</span>${U.safe(t.name)}</span>
+          <span class="chip"><span class="k">GOAT</span>${U.fmt(myLegacy)}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="list">${legacyCards}</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSettings(){
+  const xp = S.settings?.xpSpeed ?? 1.0;
+  const sp = S.settings?.skillPointRate ?? 1.0;
+  const inf = !!S.settings?.infiniteXP;
+  const pr = S.settings?.portalRate ?? 0.065;
+  const cpu = S.settings?.cpuPortalMult ?? 1.0;
+  const usr = S.settings?.userPortalMult ?? 1.0;
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>Save / Load</h2>
+        <div class="sep"></div>
+        <button class="btnGood" data-act="save">Save</button>
+        <button data-act="load">Load</button>
+        <button class="btnDanger" data-act="hard_reset">Hard Reset</button>
+      </div>
+
+      <div class="card">
+        <h2>Progression + Portal Tuning</h2>
+        <div class="sep"></div>
+
+        <label>XP Gain Speed</label>
+        <select id="set_xp">
+          ${[0.25,0.5,0.75,1,1.25,1.5,2,3,4].map(v=>`<option value="${v}" ${parseFloat(xp)==v?"selected":""}>${v}x</option>`).join("")}
+        </select>
+
+        <label>Skill Point Earn Rate</label>
+        <select id="set_sp">
+          ${[0.5,1,2,3,4].map(v=>`<option value="${v}" ${parseFloat(sp)==v?"selected":""}>${v}x</option>`).join("")}
+        </select>
+
+        <label>Infinite XP (Max Everything)</label>
+        <select id="set_inf">
+          <option value="0" ${!inf?"selected":""}>Off</option>
+          <option value="1" ${inf?"selected":""}>On</option>
+        </select>
+
+        <div class="sep"></div>
+        <label>Transfer Portal Base Rate</label>
+        <select id="set_pr">
+          ${[0.02,0.04,0.065,0.08,0.10,0.12,0.15,0.18].map(v=>`<option value="${v}" ${Math.abs(pr-v)<0.0001?"selected":""}>${(v*100).toFixed(1)}%</option>`).join("")}
+        </select>
+
+        <label>CPU Portal Multiplier</label>
+        <select id="set_cpu">
+          ${[0.5,0.75,1,1.25,1.5,2,2.5].map(v=>`<option value="${v}" ${parseFloat(cpu)==v?"selected":""}>${v}x</option>`).join("")}
+        </select>
+
+        <label>User Portal Multiplier</label>
+        <select id="set_usr">
+          ${[0.5,0.75,1,1.25,1.5,2,2.5].map(v=>`<option value="${v}" ${parseFloat(usr)==v?"selected":""}>${v}x</option>`).join("")}
+        </select>
+
+        <div class="row" style="margin-top:10px">
+          <button class="btnAccent" data-act="save_settings">Save Settings</button>
+        </div>
+
+        <div class="sep"></div>
+        <div class="muted mini">
+          Scholarships: recruiting uses <b>projected</b> slots (open now + graduating seniors − commits).
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Team Picker (Bottom-25 start rule) ---------- */
+function getBottom25Set(){
+  const teams = S.league.teams.slice().sort((a,b)=>a.prestige-b.prestige);
+  return new Set(teams.slice(0,25).map(t=>t.id));
+}
+function openTeamPicker(confFilter, search){
+  const teams = S.league.teams.slice();
+  const forceBottom = !(S.flags?.startedCareer);
+  const bottom25 = getBottom25Set();
+
+  const filtered = teams.filter(t=>{
+    const okConf = confFilter ? (t.conf===confFilter) : true;
+    const okSearch = search ? t.name.toLowerCase().includes(search.toLowerCase()) : true;
+    const okBottom = forceBottom ? bottom25.has(t.id) : true;
+    return okConf && okSearch && okBottom;
+  }).sort((a,b)=>a.prestige-b.prestige);
+
+  document.getElementById("app").innerHTML = `
+    <div class="card">
+      <h2>Pick Your Team</h2>
+      <div class="muted">${forceBottom ? "Career start rule: you must pick a Bottom-25 program (by prestige)." : "Select any school."}</div>
+      <div class="sep"></div>
+      <div class="list">
+        ${filtered.slice(0,220).map(t=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${U.safe(t.name)} ${forceBottom ? `<span class="badge bWarn">Bottom-25</span>` : ""}</div>
+                <div class="itemMeta">${U.safe(t.conf)} • Prest ${t.prestige} • OVR ${t.ovr}</div>
+              </div>
+              <button class="btnGood" data-act="select_team" data-team="${t.id}">Select</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+    <div style="height:12px"></div>
+    <button data-act="close_picker">Back</button>
+  `;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  updateSubline();
+  renderDrawerNav();
+  const app = document.getElementById("app");
+
+  if(!S){
+    app.innerHTML = `
+      <div class="card">
+        <h2>Welcome</h2>
+        <div class="muted">No save found. Start a new dynasty.</div>
+        <div class="sep"></div>
+        <button class="btnAccent" data-act="new_game">New Game</button>
+        <button data-act="load">Load Save</button>
+      </div>
+    `;
+    renderOverlay();
+    return;
+  }
+
+  const view = ({
+    home: renderHome,
+    coach: renderCoach,
+    roster: renderRoster,
+    schedule: renderSchedule,
+    recruit: renderRecruiting,
+    portal: renderPortal,
+    staff: renderStaff,
+    jobs: renderJobs,
+    records: renderRecords,
+    settings: renderSettings,
+  }[activeTab] || renderHome)();
+
+  app.innerHTML = view;
+  renderOverlay();
+}
+
+/* ---------- Actions ---------- */
+async function handle(act, el){
+  try{
+    if(act==="drawer_open"){ drawerOpen(); return; }
+    if(act==="drawer_close"){ drawerClose(); return; }
+
+    if(act==="new_game"){ newGame(); await save(); toast("New Game","Dynasty created.","good"); render(); return; }
+
+    if(act==="load"){
+      const v=await loadSave();
+      if(!v){toast("No Save","No save found.","bad");return;}
+      S=v;
+
+      // backfill
+      if(!S.records) S.records = buildInitialRecords();
+      if(!S.post) S.post = { confTourneys:{}, autoBids:[], bracket:null, madeTourney:false, tourneyWins:0 };
+      if(!S.settings) S.settings = { xpSpeed:1.0, skillPointRate:1.0, infiniteXP:false, portalRate:0.065, cpuPortalMult:1.0, userPortalMult:1.0 };
+      if(!S.flags) S.flags = { startedCareer: !!S.userTeamId };
+      if(!S.ui) S.ui = { rosterPos:"", recruitFilters:{pos:"",state:"",stars:"",sort:"rank",targetsOnly:false,pitch:"brand"}, portalFilters:{pos:"",sort:"ovr"}, modalQueue:[], lastRecap:null, retention:{attemptsUsed:0, atRisk:[]} };
+
+      for(const t of (S.league?.teams||[])){
+        t.recruiting ??= { points:0, spent:0, offered:[], spentMap:{}, commits:[], classSlots:4 };
+        t.recruiting.offered ??= [];
+        t.recruiting.commits ??= [];
+        t.recruiting.spentMap ??= {};
+        for(const p of (t.roster||[])) ensureStats(p);
+        recomputeScholarships(t);
+        computeNeeds(t);
+        computeGrades(t);
+      }
+      for(const r of (S.recruits||[])){
+        r.offers ??= [];
+        r.delta ??= {};
+        r.visitedBy ??= {};
+        r.visitScheduled ??= {};
+        r.visitPitch ??= {};
+      }
+
+      toast("Loaded","Save loaded.","good");
+      render(); return;
+    }
+
+    if(act==="save"){ await save(); toast("Saved","Saved.","good"); render(); return; }
+    if(act==="hard_reset"){ await hardReset(); toast("Reset","Save deleted.","warn"); render(); return; }
+
+    if(act==="tab"){ activeTab = el.dataset.tab; drawerClose(); render(); return; }
+
+    if(act==="modal_ack"){ clearModal(); await save(); render(); return; }
+
+    if(act==="visit_confirm"){
+      const t = getUserTeam();
+      const rid = el.dataset.rid;
+      const r = S.recruits.find(x=>x.id===rid);
+      if(!t || !r) return;
+
+      const wk = parseInt(document.getElementById("visit_week_sel")?.value||"", 10);
+      const pitch = document.getElementById("visit_pitch_sel")?.value || "brand";
+      const cost = ACTIONS.visit.cost;
+
+      const avail = t.recruiting.points - t.recruiting.spent;
+      if(cost > avail) return toast("No Points", `Only ${avail} points left.`, "bad");
+
+      t.recruiting.spent += cost;
+      t.recruiting.spentMap[r.id] = (t.recruiting.spentMap[r.id]||0) + cost;
+
+      r.visitScheduled[t.id] = wk;
+      r.visitPitch[t.id] = pitch;
+
+      toast("Visit Scheduled", `${r.name} — ${weekName(wk)}`, "good");
+      clearModal();
+      await save(); render(); return;
+    }
+
+    if(act==="create_coach"){
+      const name = (document.getElementById("coach_name")?.value||"").trim() || ("Coach " + U.pick(NAME.coachLast));
+      S.userCoach = makeCoach({name});
+      toast("Coach Created", `${S.userCoach.name} (HC)`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="team_picker"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      const conf = document.getElementById("team_conf")?.value||"";
+      const search = document.getElementById("team_search")?.value||"";
+      openTeamPicker(conf, search);
+      return;
+    }
+    if(act==="close_picker"){ render(); return; }
+
+    if(act==="select_team"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      const team = getTeam(el.dataset.team);
+
+      // ✅ enforce bottom-25 start rule on first selection
+      const bottom25 = getBottom25Set();
+      if(!S.flags?.startedCareer && !bottom25.has(team.id)){
+        return toast("Restricted", "Career start must be with a Bottom-25 team.", "bad");
+      }
+
+      S.userTeamId = team.id;
+      placeUserCoachOnTeam(team, S.userCoach);
+      S.phase="season";
+      S.weekIndex=0;
+      resetForNewSeason();
+      setGoals();
+
+      S.flags.startedCareer = true; // lock in that career has begun
+
+      toast("Team Selected", `${team.name} • HC`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="advance" || act==="sim"){
+      advance();
+      await save();
+      render();
+      return;
+    }
+
+    if(act==="perk"){
+      upgradeNode(S.userCoach, el.dataset.arch, el.dataset.key);
+      await save(); render(); return;
+    }
+
+    if(act==="offer"){ offerRecruit(el.dataset.id); await save(); render(); return; }
+
+    if(act==="sell"){
+      const t = getUserTeam();
+      const r = S.recruits.find(x=>x.id===el.dataset.id);
+      if(!t || !r) return;
+
+      // extra safety: if offered-board has it but recruit.offers doesn't, sync it
+      if(t.recruiting.offered?.includes(r.id) && !(r.offers||[]).includes(t.id)){
+        ensureUserOffer(t, r);
+      }
+
+      const kind = el.dataset.kind;
+      const pitch = S.ui.recruitFilters.pitch || "brand";
+      applyRecruitAction(t, S.userCoach, r, kind, pitch);
+      await save(); render(); return;
+    }
+
+    if(act==="ppts"){ portalSpend(el.dataset.id, parseInt(el.dataset.pts,10)); await save(); render(); return; }
+    if(act==="persuade"){ persuadeKeep(el.dataset.id); await save(); render(); return; }
+
+    if(act==="accept_job"){ acceptJob(el.dataset.id); await save(); render(); return; }
+
+    if(act==="rf_apply"){
+      S.ui.recruitFilters.pos = document.getElementById("rf_pos")?.value||"";
+      S.ui.recruitFilters.state = document.getElementById("rf_state")?.value||"";
+      S.ui.recruitFilters.stars = document.getElementById("rf_stars")?.value||"";
+      S.ui.recruitFilters.sort = document.getElementById("rf_sort")?.value||"rank";
+      S.ui.recruitFilters.targetsOnly = (document.getElementById("rf_targets")?.value==="1");
+      S.ui.recruitFilters.pitch = document.getElementById("rf_pitch")?.value || "brand";
+      await save(); render(); return;
+    }
+    if(act==="rf_clear"){ S.ui.recruitFilters={pos:"",state:"",stars:"",sort:"rank",targetsOnly:false,pitch:"brand"}; await save(); render(); return; }
+
+    if(act==="pf_apply"){
+      S.ui.portalFilters.pos = document.getElementById("pf_pos")?.value||"";
+      S.ui.portalFilters.sort = document.getElementById("pf_sort")?.value||"ovr";
+      await save(); render(); return;
+    }
+    if(act==="pf_clear"){ S.ui.portalFilters={pos:"",sort:"ovr"}; await save(); render(); return; }
+
+    if(act==="rv_apply"){ S.ui.rosterPos = document.getElementById("rv_pos")?.value||""; await save(); render(); return; }
+    if(act==="rv_clear"){ S.ui.rosterPos = ""; await save(); render(); return; }
+
+    if(act==="save_settings"){
+      const xp = parseFloat(document.getElementById("set_xp")?.value||"1");
+      const sp = parseFloat(document.getElementById("set_sp")?.value||"1");
+      const inf = (document.getElementById("set_inf")?.value==="1");
+      const pr = parseFloat(document.getElementById("set_pr")?.value||"0.065");
+      const cpu = parseFloat(document.getElementById("set_cpu")?.value||"1");
+      const usr = parseFloat(document.getElementById("set_usr")?.value||"1");
+
+      S.settings.xpSpeed = U.clamp(xp,0.25,4);
+      S.settings.skillPointRate = U.clamp(sp,0.5,4);
+      S.settings.infiniteXP = !!inf;
+      S.settings.portalRate = U.clamp(pr,0,0.18);
+      S.settings.cpuPortalMult = U.clamp(cpu,0.2,2.5);
+      S.settings.userPortalMult = U.clamp(usr,0.2,2.5);
+
+      toast("Settings Saved","Tuning applied.", "good");
+      await save(); render(); return;
+    }
+
+  }catch(e){
+    console.error(e);
+    toast("Runtime Error", e?.message || "Unknown error", "bad");
+  }
+}
+
+document.addEventListener("click", (e)=>{
+  const bg = e.target?.id==="drawer" ? e.target : null;
+  if(bg && bg.classList.contains("drawerOverlay") && bg.classList.contains("open")){
+    if(e.target === bg) drawerClose();
+    return;
+  }
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  handle(el.dataset.act, el);
+});
+
+/* ---------- Boot ---------- */
+(async function boot(){
+  const loaded = await loadSave();
+  if(loaded) S = loaded;
+  render();
+})();
+</script>
+</body>
+</html>
