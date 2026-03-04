@@ -1,0 +1,2526 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>NCAA Basketball Dynasty Sim (Offline)</title>
+  <style>
+    :root{
+      --bg:#0a0f16; --text:#eaf2ff; --muted:#a8bbd6;
+      --line:#263a55;
+      --good:#4ee08a; --warn:#ffd166; --bad:#ff5d5d;
+      --accent:#63b3ff; --accent2:#b58cff; --accent3:#7CFFB2;
+      --shadow: 0 14px 34px rgba(0,0,0,.38);
+      --safeTop: env(safe-area-inset-top, 0px); --safeBot: env(safe-area-inset-bottom, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(99,179,255,.17), transparent 60%),
+        radial-gradient(900px 700px at 85% 0%, rgba(181,140,255,.13), transparent 55%),
+        radial-gradient(900px 800px at 40% 90%, rgba(124,255,178,.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+      overflow-x:hidden;
+    }
+    html, body { overflow-x: hidden; }
+    main, .card, .list, .itemCard { max-width: 100%; }
+
+    header{
+      position:sticky; top:0; z-index:60;
+      background: linear-gradient(180deg, rgba(10,15,22,.96), rgba(10,15,22,.78));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(38,58,85,.65);
+      padding: calc(6px + var(--safeTop)) 10px 6px;
+    }
+    .topRow{display:flex; gap:10px; align-items:center; justify-content:space-between; max-width:1120px; margin:0 auto;}
+    .leftHdr{display:flex; align-items:center; gap:10px; min-width:0}
+    .brand{display:flex; flex-direction:column; gap:1px; min-width:0}
+    .brand .title{font-weight:950; letter-spacing:.4px; font-size:13px; display:flex; align-items:center; gap:8px; white-space:nowrap;}
+    .pill{
+      padding:2px 7px;
+      border:1px solid rgba(99,179,255,.40);
+      background: rgba(99,179,255,.12);
+      border-radius:999px;
+      font-size:10px; color:var(--accent); font-weight:900;
+    }
+    .sub{
+      color:var(--muted); font-size:11px; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width: 64vw;
+    }
+    .topActions{display:flex; gap:8px; align-items:center; justify-content:flex-end; flex:0 0 auto;}
+
+    button{
+      border:1px solid rgba(38,58,85,.92);
+      background: linear-gradient(180deg, rgba(18,28,43,.97), rgba(15,22,32,.95));
+      color:var(--text);
+      border-radius:12px; padding:9px 10px;
+      font-weight:900; font-size:12px;
+      cursor:pointer; box-shadow: 0 8px 18px rgba(0,0,0,.16); user-select:none;
+      transition: transform .05s ease, border-color .15s ease, filter .15s ease;
+      touch-action: manipulation;
+      white-space:nowrap;
+    }
+    button:hover{ border-color: rgba(99,179,255,.65); }
+    button:active{ transform: translateY(1px); }
+    button:disabled{opacity:.45; cursor:not-allowed; filter:saturate(.6);}
+    .btnAccent{border-color: rgba(99,179,255,.68); background: linear-gradient(180deg, rgba(99,179,255,.22), rgba(15,22,32,.95));}
+    .btnGood{border-color: rgba(78,224,138,.58); background: linear-gradient(180deg, rgba(78,224,138,.18), rgba(15,22,32,.95));}
+    .btnDanger{border-color: rgba(255,93,93,.58); background: linear-gradient(180deg, rgba(255,93,93,.18), rgba(15,22,32,.95));}
+    .btnWarn{border-color: rgba(255,209,102,.55); background: linear-gradient(180deg, rgba(255,209,102,.14), rgba(15,22,32,.95));}
+    .iconBtn{
+      width:40px; height:40px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:12px;
+    }
+
+    main{ max-width:1120px; margin:0 auto; padding:12px 12px calc(18px + var(--safeBot)); }
+    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:12px;}
+    @media (max-width: 920px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background: linear-gradient(180deg, rgba(18,28,43,.92), rgba(12,18,26,.92));
+      border:1px solid rgba(38,58,85,.82);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding:12px;
+    }
+    .card h2{margin:0 0 8px; font-size:14px; letter-spacing:.35px;}
+    .muted{color:var(--muted)}
+    .sep{height:1px; background:rgba(38,58,85,.75); margin:10px 0;}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .rowBetween{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+    .chip{
+      background: rgba(22,36,55,.92);
+      border:1px solid rgba(38,58,85,.82);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px; font-weight:900;
+      display:inline-flex; gap:6px; align-items:center;
+    }
+    .chip .k{color:var(--muted); font-weight:950; font-size:11px; letter-spacing:.2px;}
+
+    input,select,textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(38,58,85,.92);
+      background: rgba(10,14,19,.78);
+      color:var(--text);
+      padding:10px;
+      outline:none;
+      font-size:13px;
+    }
+    label{font-size:12px; color:var(--muted); font-weight:950; display:block; margin:8px 0 6px;}
+    .hint{font-size:11px; color:var(--muted); margin-top:6px; line-height:1.28;}
+    .badge{
+      padding:3px 8px; border-radius:999px;
+      font-size:11px; font-weight:950;
+      border:1px solid rgba(38,58,85,.88);
+      background: rgba(22,36,55,.75);
+      display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .bGood{border-color: rgba(78,224,138,.52); color: rgba(170,255,212,1); background: rgba(78,224,138,.11);}
+    .bBad{border-color: rgba(255,93,93,.52); color: rgba(255,182,182,1); background: rgba(255,93,93,.10);}
+    .bWarn{border-color: rgba(255,209,102,.52); color: rgba(255,241,192,1); background: rgba(255,209,102,.12);}
+    .bAcc{border-color: rgba(99,179,255,.62); color: rgba(200,230,255,1); background: rgba(99,179,255,.12);}
+    .bAcc2{border-color: rgba(181,140,255,.62); color: rgba(230,212,255,1); background: rgba(181,140,255,.12);}
+
+    .progress{height:10px; border-radius:999px; border:1px solid rgba(38,58,85,.88); background: rgba(10,14,19,.82); overflow:hidden;}
+    .bar{height:100%; width:0%; background: linear-gradient(90deg, rgba(99,179,255,.95), rgba(181,140,255,.95));}
+
+    .toasts{position:fixed; top: calc(52px + var(--safeTop)); right: 10px; z-index: 90; display:flex; flex-direction:column; gap:8px; max-width: 92vw; pointer-events:none;}
+    .toast{pointer-events:none; background: rgba(18,28,43,.92); border:1px solid rgba(38,58,85,.92); border-left:5px solid rgba(99,179,255,.85); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.25; max-width: 440px;}
+    .toast.good{border-left-color: rgba(78,224,138,.92);}
+    .toast.bad{border-left-color: rgba(255,93,93,.92);}
+    .toast.warn{border-left-color: rgba(255,209,102,.92);}
+    .toast .t{font-weight:950; margin-bottom:2px;}
+    .toast .s{color:var(--muted);}
+
+    .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width: 640px){ .twoCol{grid-template-columns:1fr;} .sub{max-width:56vw} }
+    .mini{font-size:11px}
+
+    .overlay{
+      position:fixed; inset:0; z-index:140;
+      background: rgba(0,0,0,.58);
+      backdrop-filter: blur(6px);
+      display:flex; align-items:center; justify-content:center;
+      padding: 14px;
+    }
+    .modal{
+      width:min(760px, 96vw);
+      border-radius: 18px;
+      border:1px solid rgba(38,58,85,.92);
+      box-shadow: 0 20px 80px rgba(0,0,0,.55);
+      background:
+        radial-gradient(900px 300px at 10% 0%, rgba(99,179,255,.22), transparent 55%),
+        radial-gradient(900px 300px at 90% 0%, rgba(181,140,255,.18), transparent 55%),
+        linear-gradient(180deg, rgba(18,28,43,.96), rgba(12,18,26,.96));
+      padding: 14px;
+      max-height: calc(92vh - var(--safeTop) - var(--safeBot));
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .hero{
+      border-radius: 14px;
+      border:1px solid rgba(99,179,255,.42);
+      background: linear-gradient(90deg, rgba(99,179,255,.20), rgba(181,140,255,.18));
+      padding: 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .hero .big{font-size: 15px; font-weight: 1000; letter-spacing:.2px; line-height:1.15;}
+    .hero .subt{font-size: 12px; font-weight: 950; color: rgba(255,241,192,1);}
+    .hero .logo{font-size: 28px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));}
+
+    .drawerOverlay{
+      position:fixed; inset:0; z-index:120;
+      background: rgba(0,0,0,.42);
+      backdrop-filter: blur(6px);
+      display:none;
+    }
+    .drawerOverlay.open{display:block;}
+    .drawer{
+      position:fixed; top:0; left:0;
+      height:100%;
+      width:min(340px, 90vw);
+      padding: calc(10px + var(--safeTop)) 12px 12px;
+      background: linear-gradient(180deg, rgba(18,28,43,.98), rgba(12,18,26,.98));
+      border-right:1px solid rgba(38,58,85,.82);
+      box-shadow: 24px 0 80px rgba(0,0,0,.55);
+      transform: translateX(-105%);
+      transition: transform .18s ease;
+      display:flex; flex-direction:column; gap:10px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .drawerOverlay.open .drawer{transform: translateX(0);}
+    .drawerHdr{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .drawerTitle{font-weight:1000; letter-spacing:.3px;}
+    .navList{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+    .navItem{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(38,58,85,.86);
+      background: rgba(18,28,43,.62);
+      color:var(--muted);
+      cursor:pointer; user-select:none; touch-action: manipulation;
+    }
+    .navItem .l{display:flex; align-items:center; gap:10px; font-weight:950; color:inherit;}
+    .navItem.active{color:var(--text); border-color: rgba(99,179,255,.68); background: rgba(99,179,255,.12);}
+
+    @media (max-width: 520px){
+      .hideOnPhone{display:none !important;}
+      .sub{max-width:56vw}
+    }
+
+    .list{display:flex; flex-direction:column; gap:10px;}
+    .itemCard{
+      border-radius: 14px;
+      border: 1px solid rgba(38,58,85,.82);
+      background: linear-gradient(180deg, rgba(18,28,43,.82), rgba(12,18,26,.82));
+      padding: 10px;
+    }
+    .itemTop{display:flex; align-items:flex-start; justify-content:space-between; gap:10px;}
+    .itemTitle{font-weight:1000; line-height:1.15; font-size:13px;}
+    .itemMeta{margin-top:4px; display:flex; flex-wrap:wrap; gap:6px; color:var(--muted); font-size:11px; font-weight:800;}
+    .actionLine{margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;}
+    .smallTable{width:100%; border-collapse:collapse; font-size:12px;}
+    .smallTable th,.smallTable td{padding:8px 6px; border-bottom:1px solid rgba(38,58,85,.55); text-align:left;}
+    .smallTable th{color:var(--muted); font-size:11px; letter-spacing:.2px;}
+  </style>
+</head>
+<body>
+<header>
+  <div class="topRow">
+    <div class="leftHdr">
+      <button class="iconBtn" data-act="drawer_open" aria-label="Menu">☰</button>
+      <div class="brand">
+        <div class="title">🏀 NCAA Basketball Dynasty <span class="pill">OFFLINE</span></div>
+        <div class="sub" id="subLine">Loading…</div>
+      </div>
+    </div>
+
+    <div class="topActions">
+      <button class="btnAccent" data-act="advance">Advance</button>
+      <button class="hideOnPhone" data-act="sim">Sim</button>
+      <button class="hideOnPhone btnGood" data-act="save">Save</button>
+    </div>
+  </div>
+</header>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="drawerOverlay" id="drawer">
+  <div class="drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="drawerHdr">
+      <div class="drawerTitle">Menu</div>
+      <button class="iconBtn" data-act="drawer_close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="card" style="padding:10px; background:rgba(18,28,43,.55)">
+      <div class="row" style="gap:8px">
+        <button class="btnAccent" style="flex:1" data-act="advance">Advance</button>
+        <button style="flex:1" data-act="sim">Sim</button>
+      </div>
+      <div class="row" style="gap:8px; margin-top:8px">
+        <button class="btnGood" style="flex:1" data-act="save">Save</button>
+        <button class="btnDanger" style="flex:1" data-act="hard_reset">Reset</button>
+      </div>
+      <div class="hint">All tabs live here. No bottom bar.</div>
+    </div>
+
+    <div class="navList" id="navList"></div>
+  </div>
+</div>
+
+<main id="app"></main>
+<div id="overlayRoot"></div>
+
+<script>
+/* ==========================================================
+   NCAA BASKETBALL DYNASTY (FOUNDATION BUILD)
+   ✅ 30-game regular season (2 games/week x 15 weeks)
+   ✅ Conference tourney
+   ✅ Selection Sunday + bracket regions (East/West/South/Midwest)
+   ✅ NET + RPI resume system
+   ✅ Quadrant records (location-adjusted cutoffs)
+   ✅ Weekly NET/RPI updates + Rankings tab
+   ✅ Recruiting skeleton (deeper hooks ready)
+   ✅ Offline single-file save via IndexedDB
+   NOTE: "Real rosters" requires importing a roster JSON/CSV — supported via Settings import.
+========================================================== */
+
+const U = {
+  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+  rint:(a,b)=>Math.floor(a + Math.random()*(b-a+1)),
+  pick:(arr)=>arr[Math.floor(Math.random()*arr.length)],
+  uuid:()=> (crypto?.randomUUID ? crypto.randomUUID() : ("id"+Math.random().toString(16).slice(2)+Date.now())),
+  deepCopy:(o)=>JSON.parse(JSON.stringify(o)),
+  safe:(s)=> (s??"").toString().replace(/[<>&"]/g, m=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;", "\"":"&quot;" }[m])),
+  fmt:(n)=> (n??0).toLocaleString(),
+  pct:(x)=> (Math.round((x||0)*1000)/10).toFixed(1)+"%",
+};
+
+function toast(title, msg, type=""){
+  const wrap = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast " + (type||"");
+  el.innerHTML = `<div class="t">${U.safe(title)}</div><div class="s">${U.safe(msg)}</div>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(-6px)"; }, 3400);
+  setTimeout(()=>{ el.remove(); }, 4100);
+}
+
+/* ---------- IndexedDB KV ---------- */
+const STORE = (() => {
+  const DB_NAME = "ncaa_hoops_dynasty_db_v1";
+  const STORE_NAME = "kv";
+  let dbPromise = null;
+
+  function openDB(){
+    if(dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve)=>{
+      if(!("indexedDB" in window)) return resolve(null);
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+    return dbPromise;
+  }
+  async function idbGet(key){
+    const db = await openDB();
+    if(!db) return null;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.get(key);
+      rq.onsuccess = () => resolve(rq.result ?? null);
+      rq.onerror = () => resolve(null);
+    });
+  }
+  async function idbSet(key, val){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.put(val, key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+  async function idbDel(key){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.delete(key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+  return {
+    async get(key){ return await idbGet(key); },
+    async set(key,val){ return await idbSet(key,val); },
+    async del(key){ return await idbDel(key); },
+  };
+})();
+
+/* ---------- Game Config ---------- */
+const GAME = {
+  SAVE_KEY: "ncaa_hoops_dynasty_SAVE_v1",
+  TEAMS: 150,
+  ROSTER_SIZE: 13,
+  REG_WEEKS: 15,           // 2 games per week => 30 games
+  CONF_TOURNEY_WEEK: 16,
+  SELECTION_SUNDAY_WEEK: 17,
+  NCAA_WK1: 18,            // R64 + R32
+  NCAA_WK2: 19,            // S16 + E8
+  NCAA_WK3: 20,            // F4 + Title
+  RECRUIT_POOL: 450,
+  REG_GAMES_PER_WEEK: 2,
+  REG_TOTAL_GAMES: 30,
+  POS: ["PG","SG","SF","PF","C"],
+  REGIONS: ["East","West","South","Midwest"],
+};
+
+/* ---------- Time labels ---------- */
+function weekName(w){
+  if(w===0) return "Preseason";
+  if(w>=1 && w<=GAME.REG_WEEKS) return `Week ${w} (2 Games)`;
+  if(w===GAME.CONF_TOURNEY_WEEK) return "Conference Tournament";
+  if(w===GAME.SELECTION_SUNDAY_WEEK) return "Selection Sunday";
+  if(w===GAME.NCAA_WK1) return "NCAA Tournament (R64/R32)";
+  if(w===GAME.NCAA_WK2) return "NCAA Tournament (S16/E8)";
+  if(w===GAME.NCAA_WK3) return "Final Four + Championship";
+  return `Week ${w}`;
+}
+
+/* ---------- Names ---------- */
+const NAME = {
+  first:["Jaden","Marcus","DeAndre","Tyrese","Cameron","Ethan","Jaylen","Noah","Kobe","Miles","Dylan","Malik","Zion","Jordan","Caleb","Tre","Bryce","Isaiah","Damian","Aiden","Rashad","Micah","Logan","Colin","Xavier","Julian","Elijah","Gavin","Brandon","Terrence","Carter","Adrian","Nate","Chris","Kevin","Antonio","Kyler","Mason","Grant","Hunter","AJ","RJ","TJ","DJ"],
+  last:["Williams","Johnson","Brown","Davis","Miller","Wilson","Moore","Anderson","Thomas","Jackson","White","Harris","Martin","Thompson","Garcia","Martinez","Robinson","Clark","Lewis","Lee","Walker","Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson","Hill","Campbell","Mitchell","Carter","Roberts","Turner","Phillips","Parker","Evans","Edwards","Collins","Stewart","Sanchez","Morris","Rogers","Reed","Cook"],
+  coachFirst:["Mike","Dan","Chris","Ryan","Eric","Tony","Steve","James","Matt","Brad","Kevin","Derek","Nick","Robert","Sam","Rich","Jeff","Grant","Kyle","Todd","Mark","Andre","Jason","Pat","Bryan","John","Zach","Will"],
+  coachLast:["Henderson","Murray","Donovan","Bennett","Holt","Pearson","Crawford","Walters","Kelley","Fisher","Browning","Hughes","McCarthy","Franklin","Rivers","Hawkins","Montgomery","Owens","West","Snyder","Burke","Caldwell","Stephens","Fowler","Carver","Harrington","Simmons","Harmon","Kerrigan"]
+};
+function genPlayerName(){ return U.pick(NAME.first)+" "+U.pick(NAME.last); }
+function genCoachName(){ return U.pick(NAME.coachFirst)+" "+U.pick(NAME.coachLast); }
+
+/* ==========================================================
+   DATA MODEL: Teams, Games, Resume (NET/RPI)
+========================================================== */
+
+function blankResume(){
+  return {
+    wins:0, losses:0,
+    confW:0, confL:0,
+    homeW:0, homeL:0,
+    awayW:0, awayL:0,
+    neutralW:0, neutralL:0,
+    Q1W:0,Q1L:0,Q2W:0,Q2L:0,Q3W:0,Q3L:0,Q4W:0,Q4L:0,
+    top50W:0, top50L:0, top100W:0, top100L:0,
+    badLosses:0,
+    SOS:0, NCSOS:0,
+    WP:0, OWP:0, OOWP:0,
+    RPI:0, RPIrank:999,
+    NETscore:0, NETrank:999,
+  };
+}
+
+function makeCoach(name){
+  return {
+    id: U.uuid(),
+    name,
+    xp:0,
+    skillPoints: 3,
+    career:{ wins:0, losses:0, tourneyApps:0, f4:0, natties:0 },
+    years:0,
+  };
+}
+
+function makePlayer(pos, year){
+  // simple now; deeper later
+  const base = U.rint(62,82) + (year==="SR"?6:year==="JR"?4:year==="SO"?2:0);
+  return {
+    id: U.uuid(),
+    name: genPlayerName(),
+    pos,
+    year,
+    ovr: U.clamp(base + U.rint(-4,4), 55, 94),
+    pot: U.rint(0,10),
+    stats:{ gp:0, pts:0, reb:0, ast:0, stl:0, blk:0 },
+  };
+}
+
+function buildRoster(){
+  const years = ["FR","FR","FR","SO","SO","JR","JR","SR","SR","FR","SO","JR","SR"];
+  const dist = ["PG","PG","SG","SG","SF","SF","PF","PF","C","SG","SF","PF","C"];
+  return dist.map((p,i)=>makePlayer(p, years[i] || U.pick(["FR","SO","JR","SR"])));
+}
+
+function makeTeam({name, conf, prestigeBase}){
+  const prestige = U.clamp(prestigeBase + U.rint(-12,12), 35, 90);
+  const budget = U.clamp(40 + prestige + U.rint(-10,10), 30, 98);
+  const ovr = U.clamp(prestigeBase + U.rint(-14,12), 35, 92);
+  return {
+    id: U.uuid(),
+    name,
+    conf,
+    prestige,
+    budget,
+    ovr,
+    off: U.clamp(ovr + U.rint(-8,10), 30, 95),
+    def: U.clamp(ovr + U.rint(-8,10), 30, 95),
+    elo: 1500 + (ovr-70)*12 + U.rint(-60,60),
+    season:{ w:0,l:0, confW:0, confL:0, pf:0, pa:0, games:0 },
+    roster: buildRoster(),
+    resume: blankResume(),
+    gameLog: [], // {oppId, loc:'H'|'A'|'N', isConf, w, l, pf, pa}
+    confChamp:false,
+    autoBid:false,
+    ncaa:{ selected:false, seed:0, region:"", line:"" }
+  };
+}
+
+/* ---------- Conference set (150 teams, mostly fictional but credible structure) ---------- */
+const CONFSET = [
+  {name:"SEC", base:86, size:16},
+  {name:"Big Ten", base:86, size:18},
+  {name:"Big 12", base:84, size:16},
+  {name:"ACC", base:83, size:16},
+  {name:"Big East", base:82, size:12},
+  {name:"American", base:72, size:12},
+  {name:"Mountain West", base:70, size:12},
+  {name:"A10", base:69, size:15},
+  {name:"WCC", base:68, size:10},
+  {name:"MVC", base:66, size:12},
+  {name:"MAC", base:64, size:12},
+  {name:"CUSA", base:62, size:10},
+  {name:"Sun Belt", base:66, size:14},
+  {name:"CAA", base:61, size:14},
+  {name:"Horizon", base:60, size:11},
+  {name:"Summit", base:59, size:9},
+  {name:"SoCon", base:60, size:10},
+  {name:"Ivy", base:67, size:8},
+  {name:"SWAC", base:52, size:12},
+  {name:"MEAC", base:52, size:8},
+];
+
+/* generate unique-ish school names */
+const SCHOOL_A = ["Northern","Southern","Eastern","Western","Central","Coastal","State","Tech","University","A&M","College"];
+const SCHOOL_B = ["Valley","Heights","Ridge","Bay","River","Prairie","Canyon","Lakes","Pines","City","Plains","Harbor","Hill","Grove"];
+const SCHOOL_C = ["Wildcats","Tigers","Eagles","Bears","Hawks","Panthers","Rams","Bulldogs","Spartans","Trojans","Broncos","Cougars","Owls","Lions"];
+
+function genSchoolName(used){
+  for(let i=0;i<999;i++){
+    const a = U.pick(SCHOOL_A);
+    const b = U.pick(SCHOOL_B);
+    const name = (Math.random()<0.45) ? `${a} ${b}` : `${b} ${a}`;
+    if(!used.has(name)){ used.add(name); return name; }
+  }
+  return "New School " + U.rint(1,9999);
+}
+
+function buildLeague(){
+  const teams=[];
+  const used=new Set();
+  for(const c of CONFSET){
+    for(let i=0;i<c.size;i++){
+      const name = genSchoolName(used);
+      teams.push(makeTeam({name, conf:c.name, prestigeBase:c.base}));
+    }
+  }
+  // trim to target
+  teams.length = Math.min(teams.length, GAME.TEAMS);
+  return teams;
+}
+
+/* ==========================================================
+   SCHEDULE + GAME SIM
+========================================================== */
+
+/* Season schedule format:
+   schedule[week] = {week, games:[{home, away, loc:'H' for home team, neutral:false, isConf:boolean, played, scoreH, scoreA}]}
+   Each team plays 2 games/week for weeks 1-15.
+*/
+function buildSchedule(teams){
+  const byConf = {};
+  for(const t of teams) (byConf[t.conf] ??= []).push(t);
+
+  const schedule = [];
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const games=[];
+    const used = new Set();
+    const order = teams.slice().sort(()=>Math.random()-0.5);
+
+    // Game 1 pass (try conf matchups)
+    for(const a of order){
+      if(used.has(a.id)) continue;
+      const candidates = (Math.random()<0.60 ? (byConf[a.conf]||[]) : teams)
+        .filter(x=>!used.has(x.id) && x.id!==a.id);
+
+      if(!candidates.length) continue;
+      const b = U.pick(candidates);
+
+      used.add(a.id); used.add(b.id);
+      const homeFirst = Math.random()<0.55;
+      games.push({
+        home: homeFirst ? a.id : b.id,
+        away: homeFirst ? b.id : a.id,
+        neutral: Math.random()<0.08,
+        isConf: (a.conf===b.conf),
+        played:false, scoreH:0, scoreA:0
+      });
+    }
+
+    // Game 2 pass (everyone plays a second game if possible)
+    const used2 = new Set();
+    const order2 = teams.slice().sort(()=>Math.random()-0.5);
+    for(const a of order2){
+      if(used2.has(a.id)) continue;
+      const candidates = teams.filter(x=>!used2.has(x.id) && x.id!==a.id);
+      if(!candidates.length) continue;
+      const b = U.pick(candidates);
+      used2.add(a.id); used2.add(b.id);
+
+      const homeFirst = Math.random()<0.55;
+      games.push({
+        home: homeFirst ? a.id : b.id,
+        away: homeFirst ? b.id : a.id,
+        neutral: Math.random()<0.10,
+        isConf: (a.conf===b.conf),
+        played:false, scoreH:0, scoreA:0
+      });
+    }
+
+    schedule.push({week:w, games});
+  }
+  return schedule;
+}
+
+function simGame(teamH, teamA, neutral=false){
+  // simple but credible scoring model for hoops
+  const pace = 68 + U.rint(-6,6);
+  const homeAdv = neutral ? 0 : 2.4;
+
+  const hOff = teamH.off + (teamH.elo-1500)*0.010;
+  const hDef = teamH.def + (teamH.elo-1500)*0.010;
+  const aOff = teamA.off + (teamA.elo-1500)*0.010;
+  const aDef = teamA.def + (teamA.elo-1500)*0.010;
+
+  let expH = pace + (hOff - aDef)*0.55 + homeAdv + U.rint(-7,7);
+  let expA = pace + (aOff - hDef)*0.55 + U.rint(-7,7);
+
+  expH = U.clamp(Math.round(expH), 45, 105);
+  expA = U.clamp(Math.round(expA), 45, 105);
+  if(expH===expA){ expH += U.rint(1,6); }
+
+  return {scoreH:expH, scoreA:expA};
+}
+
+function eloExpected(rA, rB){ return 1/(1 + Math.pow(10,(rB-rA)/400)); }
+function eloUpdate(teamA, teamB, scoreA, scoreB, neutral=false){
+  const k = 18;
+  const a = teamA.elo, b = teamB.elo;
+  const sA = scoreA>scoreB ? 1 : 0;
+  const sB = 1 - sA;
+  const eA = eloExpected(a,b), eB = 1-eA;
+
+  const mov = Math.min(18, Math.max(1, Math.abs(scoreA-scoreB)));
+  const movMult = 1 + Math.log(1+mov)/2.4;
+
+  teamA.elo = a + k*movMult*(sA - eA);
+  teamB.elo = b + k*movMult*(sB - eB);
+}
+
+/* apply result and append to game logs */
+function applyResult(game, teamH, teamA){
+  const {scoreH, scoreA, neutral, isConf} = game;
+
+  teamH.season.games++; teamA.season.games++;
+  teamH.season.pf += scoreH; teamH.season.pa += scoreA;
+  teamA.season.pf += scoreA; teamA.season.pa += scoreH;
+
+  const hWin = scoreH>scoreA;
+  if(hWin){
+    teamH.season.w++; teamA.season.l++;
+    if(isConf){ teamH.season.confW++; teamA.season.confL++; }
+  } else {
+    teamA.season.w++; teamH.season.l++;
+    if(isConf){ teamA.season.confW++; teamH.season.confL++; }
+  }
+
+  // location relative to each team
+  const locH = neutral ? "N" : "H";
+  const locA = neutral ? "N" : "A";
+
+  teamH.gameLog.push({oppId:teamA.id, loc:locH, isConf, w:hWin?1:0, l:hWin?0:1, pf:scoreH, pa:scoreA});
+  teamA.gameLog.push({oppId:teamH.id, loc:locA, isConf, w:hWin?0:1, l:hWin?1:0, pf:scoreA, pa:scoreH});
+
+  // ELO updates
+  eloUpdate(teamH, teamA, scoreH, scoreA, neutral);
+}
+
+/* ==========================================================
+   RESUME: RPI + NET + Quadrants
+========================================================== */
+
+/* Quadrant cutoffs by opponent rank + location (approx) */
+const QUAD = {
+  Q1: {H:30, N:50, A:75},
+  Q2: {H:75, N:100, A:135},
+  Q3: {H:160, N:200, A:240},
+  // Q4 is the rest
+};
+
+function currentNETrank(team){
+  return team.resume?.NETrank ?? 999;
+}
+
+function opponentRankForQuadrant(oppTeam){
+  // use NET rank if computed, else ELO rank fallback
+  return oppTeam.resume?.NETrank && oppTeam.resume.NETrank<999 ? oppTeam.resume.NETrank : oppTeam.__eloRank || 999;
+}
+
+function whichQuad(oppRank, loc){
+  if(oppRank <= QUAD.Q1[loc]) return 1;
+  if(oppRank <= QUAD.Q2[loc]) return 2;
+  if(oppRank <= QUAD.Q3[loc]) return 3;
+  return 4;
+}
+
+function resetTeamResume(t){
+  t.resume = blankResume();
+  t.resume.wins = t.season.w;
+  t.resume.losses = t.season.l;
+  t.resume.confW = t.season.confW;
+  t.resume.confL = t.season.confL;
+}
+
+/* RPI building blocks:
+   WP: your win%
+   OWP: avg opponents win% excluding games vs you
+   OOWP: avg opponents' opponents win%
+*/
+function computeRPI(teams){
+  const teamById = new Map(teams.map(t=>[t.id,t]));
+  const wp = new Map();
+  for(const t of teams){
+    const g = (t.season.w + t.season.l);
+    wp.set(t.id, g ? (t.season.w/g) : 0);
+  }
+
+  // OWP excluding games vs you
+  const owp = new Map();
+  for(const t of teams){
+    const opps = t.gameLog.map(gl=>gl.oppId);
+    if(!opps.length){ owp.set(t.id, 0); continue; }
+
+    let sum=0, cnt=0;
+    for(const oppId of opps){
+      const opp = teamById.get(oppId);
+      if(!opp) continue;
+
+      // exclude games vs t from opponent record
+      let w = opp.season.w;
+      let l = opp.season.l;
+      // subtract each head-to-head occurrence
+      const vs = opp.gameLog.filter(x=>x.oppId===t.id);
+      for(const g of vs){
+        w -= g.w;
+        l -= g.l;
+      }
+      const games = w+l;
+      const pct = games ? (w/games) : 0;
+      sum += pct; cnt++;
+    }
+    owp.set(t.id, cnt? (sum/cnt) : 0);
+  }
+
+  const oowp = new Map();
+  for(const t of teams){
+    const opps = t.gameLog.map(gl=>gl.oppId);
+    if(!opps.length){ oowp.set(t.id, 0); continue; }
+    let sum=0, cnt=0;
+    for(const oppId of opps){
+      sum += (owp.get(oppId) ?? 0);
+      cnt++;
+    }
+    oowp.set(t.id, cnt? (sum/cnt) : 0);
+  }
+
+  // RPI = .25 WP + .50 OWP + .25 OOWP
+  for(const t of teams){
+    const WP = wp.get(t.id) ?? 0;
+    const OWP = owp.get(t.id) ?? 0;
+    const OOWP = oowp.get(t.id) ?? 0;
+    t.resume.WP = WP;
+    t.resume.OWP = OWP;
+    t.resume.OOWP = OOWP;
+    t.resume.RPI = 0.25*WP + 0.50*OWP + 0.25*OOWP;
+  }
+
+  const rpiRanked = teams.slice().sort((a,b)=>b.resume.RPI - a.resume.RPI);
+  rpiRanked.forEach((t,i)=>t.resume.RPIrank = i+1);
+}
+
+/* NET score approximation:
+   - ELO strength (team quality)
+   - SOS (opponent avg ELO)
+   - Results quality (wins weighted by opp rank + location)
+   - Quadrant record bonuses
+   - Bad loss penalties
+*/
+function computeNET(teams){
+  // ELO rank baseline
+  const eloRank = teams.slice().sort((a,b)=>b.elo-a.elo);
+  eloRank.forEach((t,i)=>t.__eloRank = i+1);
+
+  // SOS: avg opponent ELO
+  const teamById = new Map(teams.map(t=>[t.id,t]));
+  for(const t of teams){
+    const opps = t.gameLog.map(gl=>teamById.get(gl.oppId)).filter(Boolean);
+    if(!opps.length){ t.resume.SOS=0; t.resume.NCSOS=0; continue; }
+    const avgElo = opps.reduce((a,o)=>a+o.elo,0)/opps.length;
+    t.resume.SOS = avgElo;
+
+    const nonConfOpps = t.gameLog.filter(g=>!g.isConf).map(g=>teamById.get(g.oppId)).filter(Boolean);
+    const avgNc = nonConfOpps.length ? nonConfOpps.reduce((a,o)=>a+o.elo,0)/nonConfOpps.length : avgElo;
+    t.resume.NCSOS = avgNc;
+  }
+
+  // First pass: provisional NET rank by ELO + RPI + record
+  const provisional = teams.slice().map(t=>{
+    const g = t.season.games || 1;
+    const winPct = t.season.w/g;
+    const margin = (t.season.pf - t.season.pa)/g;
+    const s = (t.elo/10) + (winPct*120) + (margin*0.9) + (t.prestige*0.35) + (t.resume.RPI*80);
+    return {id:t.id, s};
+  }).sort((a,b)=>b.s-a.s);
+  const provRank = new Map();
+  provisional.forEach((x,i)=>provRank.set(x.id,i+1));
+
+  // Quadrants + quality results based on provisional rank (stable)
+  for(const t of teams){
+    // reset Q buckets
+    t.resume.Q1W=t.resume.Q1L=t.resume.Q2W=t.resume.Q2L=t.resume.Q3W=t.resume.Q3L=t.resume.Q4W=t.resume.Q4L=0;
+    t.resume.top50W=t.resume.top50L=t.resume.top100W=t.resume.top100L=0;
+    t.resume.badLosses=0;
+
+    for(const g of t.gameLog){
+      const opp = teamById.get(g.oppId);
+      if(!opp) continue;
+      const r = provRank.get(opp.id) ?? 999;
+      const q = whichQuad(r, g.loc);
+
+      if(q===1){ if(g.w) t.resume.Q1W++; else t.resume.Q1L++; }
+      else if(q===2){ if(g.w) t.resume.Q2W++; else t.resume.Q2L++; }
+      else if(q===3){ if(g.w) t.resume.Q3W++; else t.resume.Q3L++; }
+      else { if(g.w) t.resume.Q4W++; else t.resume.Q4L++; }
+
+      if(r<=50){ if(g.w) t.resume.top50W++; else t.resume.top50L++; }
+      if(r<=100){ if(g.w) t.resume.top100W++; else t.resume.top100L++; }
+
+      if(!g.w && (q===3 || q===4)) t.resume.badLosses += (q===4 ? 2 : 1);
+      if(g.loc==="A" && g.w && (q===1 || q===2)) { /* road value captured later */ }
+    }
+  }
+
+  // NET score numeric
+  const NETarr = teams.slice().map(t=>{
+    const games = t.season.games || 1;
+    const winPct = t.season.w/games;
+    const margin = (t.season.pf - t.season.pa)/games;
+
+    // normalize ELO into 0..1-ish band
+    const eloNorm = (t.elo - 1400) / 300; // ~0 to 1
+    const sosNorm = (t.resume.SOS - 1400) / 300;
+
+    const qScore =
+      (t.resume.Q1W*3 - t.resume.Q1L*1) +
+      (t.resume.Q2W*2 - t.resume.Q2L*1) +
+      (t.resume.Q3W*0.5 - t.resume.Q3L*2) +
+      (t.resume.Q4W*0.1 - t.resume.Q4L*3);
+
+    const roadBonus = (t.resume.awayW*0.8 + t.resume.neutralW*0.4);
+    const badPenalty = t.resume.badLosses*2.8;
+
+    // results quality: top50/top100
+    const rq = (t.resume.top50W*2.4 + t.resume.top100W*1.2) - (t.resume.top50L*1.0);
+
+    const net =
+      (0.35*(eloNorm*100)) +
+      (0.25*(sosNorm*100)) +
+      (0.20*(rq)) +
+      (0.10*(qScore)) +
+      (0.10*(winPct*80 + margin*0.6 + roadBonus)) -
+      badPenalty;
+
+    t.resume.NETscore = net;
+    return {id:t.id, net};
+  }).sort((a,b)=>b.net-a.net);
+
+  NETarr.forEach((x,i)=>{
+    const t = teamById.get(x.id);
+    if(t) t.resume.NETrank = i+1;
+  });
+}
+
+/* Update location W/L from game logs */
+function updateLocationSplits(teams){
+  for(const t of teams){
+    t.resume.homeW=t.resume.homeL=t.resume.awayW=t.resume.awayL=t.resume.neutralW=t.resume.neutralL=0;
+    for(const g of t.gameLog){
+      if(g.loc==="H"){ if(g.w) t.resume.homeW++; else t.resume.homeL++; }
+      else if(g.loc==="A"){ if(g.w) t.resume.awayW++; else t.resume.awayL++; }
+      else { if(g.w) t.resume.neutralW++; else t.resume.neutralL++; }
+    }
+  }
+}
+
+function recomputeResumes(){
+  const teams = S.league.teams;
+  // base resume reset (season fields)
+  for(const t of teams) resetTeamResume(t);
+  updateLocationSplits(teams);
+  computeRPI(teams);
+  computeNET(teams);
+}
+
+/* ==========================================================
+   CONFERENCE TOURNEY + SELECTION + BRACKET
+========================================================== */
+
+function confStandings(confName){
+  const list = S.league.teams.filter(t=>t.conf===confName);
+  return list.slice().sort((a,b)=>{
+    const aG=(a.season.confW+a.season.confL)||0;
+    const bG=(b.season.confW+b.season.confL)||0;
+    const aPct=aG? a.season.confW/aG : 0;
+    const bPct=bG? b.season.confW/bG : 0;
+    if(bPct!==aPct) return bPct-aPct;
+    if(b.season.w!==a.season.w) return b.season.w-a.season.w;
+    return a.resume.NETrank - b.resume.NETrank;
+  });
+}
+
+function simulateConfTourney(){
+  // simplified single-elim bracket using standings strength
+  for(const t of S.league.teams){ t.confChamp=false; t.autoBid=false; }
+
+  const confs = Array.from(new Set(S.league.teams.map(t=>t.conf)));
+  for(const conf of confs){
+    const st = confStandings(conf);
+    if(st.length<2) continue;
+
+    // entrants: all
+    let alive = st.slice().map(x=>x.id);
+
+    // weighted upset sim
+    while(alive.length>1){
+      alive.sort(()=>Math.random()-0.5);
+      const next=[];
+      for(let i=0;i<alive.length;i+=2){
+        if(i===alive.length-1){ next.push(alive[i]); continue; }
+        const A = getTeam(alive[i]);
+        const B = getTeam(alive[i+1]);
+        const res = simGame(A,B,true);
+
+        // pick winner with probability from ELO
+        const pA = eloExpected(A.elo,B.elo);
+        const winA = (Math.random() < pA);
+
+        const winnerId = winA ? A.id : B.id;
+        next.push(winnerId);
+      }
+      alive = next;
+    }
+    const champ = getTeam(alive[0]);
+    if(champ){
+      champ.confChamp = true;
+      champ.autoBid = true;
+      champ.prestige = U.clamp(champ.prestige+1, 30, 99);
+    }
+  }
+  toast("Conference Tournaments", "Auto-bids set (conf champions).", "good");
+}
+
+function selectionScore(t){
+  // committee-like composite using NET first, then resume tiebreakers
+  const net = (t.resume.NETrank>0 ? (1/(t.resume.NETrank)) : 0);
+  const rpi = (t.resume.RPIrank>0 ? (1/(t.resume.RPIrank)) : 0);
+  const q1 = t.resume.Q1W*2.2 - t.resume.Q1L*1.0;
+  const q2 = t.resume.Q2W*1.3 - t.resume.Q2L*0.8;
+  const road = t.resume.awayW*0.9 + t.resume.neutralW*0.5;
+  const bad = t.resume.badLosses*2.0;
+  const winPct = (t.resume.wins + t.resume.losses) ? (t.resume.wins/(t.resume.wins+t.resume.losses)) : 0;
+
+  return (net*2500) + (rpi*700) + (q1*8) + (q2*5) + (road*2.0) + (winPct*120) + (t.prestige*0.25) - bad;
+}
+
+function buildBracket(){
+  // reset bracket state
+  S.bracket = {
+    regions:{ East:[], West:[], South:[], Midwest:[] },
+    firstFour:[],
+    field:[], // overall ordered
+    champTeamId:null
+  };
+  for(const t of S.league.teams){
+    t.ncaa = { selected:false, seed:0, region:"", line:"" };
+  }
+
+  // recompute resumes before selection
+  recomputeResumes();
+
+  // auto-bids (one per conf)
+  const autos = S.league.teams.filter(t=>t.autoBid);
+  // fill at-large to 68
+  const nonAutos = S.league.teams.filter(t=>!t.autoBid);
+
+  const ranked = nonAutos.slice().sort((a,b)=>selectionScore(b)-selectionScore(a));
+  const atLargeCount = Math.max(0, 68 - autos.length);
+  const atLarges = ranked.slice(0, atLargeCount);
+
+  const field = autos.concat(atLarges).sort((a,b)=>selectionScore(b)-selectionScore(a));
+  S.bracket.field = field.map(t=>t.id);
+
+  // Selection Sunday popup for user
+  const my = getUserTeam();
+  if(my){
+    const inField = field.some(t=>t.id===my.id);
+    queueModal({
+      type:"milestone",
+      title:"SELECTION SUNDAY",
+      teamName: my.name,
+      line: inField ? "You made the NCAA Tournament field!" : "You did NOT make the NCAA Tournament.",
+      icon: inField ? "🎟️" : "🧊"
+    });
+    if(inField) S.userCoach.career.tourneyApps = (S.userCoach.career.tourneyApps||0)+1;
+  }
+
+  // assign seed lines 1..16 (4 each)
+  const seedLines = Array.from({length:16}, ()=>[]);
+  for(let i=0;i<field.length;i++){
+    const seed = Math.min(16, Math.floor(i/4)+1);
+    seedLines[seed-1].push(field[i]);
+  }
+
+  // region placement with simple conference separation attempt (R64)
+  const regions = GAME.REGIONS.slice();
+  const slots = {
+    1:[0,1,2,3], 2:[0,1,2,3], 3:[0,1,2,3], 4:[0,1,2,3],
+    5:[0,1,2,3], 6:[0,1,2,3], 7:[0,1,2,3], 8:[0,1,2,3],
+    9:[0,1,2,3], 10:[0,1,2,3], 11:[0,1,2,3], 12:[0,1,2,3],
+    13:[0,1,2,3], 14:[0,1,2,3], 15:[0,1,2,3], 16:[0,1,2,3],
+  };
+
+  // bracket pairing per region (seed vs seed)
+  const pairMap = new Map([
+    [1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]
+  ]);
+
+  function regionHasConfConflict(regionTeams, team, seed){
+    // only enforce R64: don't place team if its R64 opponent in region is same conf
+    const oppSeed = pairMap.get(seed);
+    if(!oppSeed) return false;
+
+    const opp = regionTeams.find(x=>x.seed===oppSeed);
+    if(!opp) return false;
+
+    const tA = getTeam(team.id);
+    const tB = getTeam(opp.teamId);
+    if(!tA || !tB) return false;
+    return tA.conf === tB.conf;
+  }
+
+  // place by seed line
+  for(let seed=1; seed<=16; seed++){
+    const line = seedLines[seed-1] || [];
+    // shuffle to reduce patterns
+    const list = line.slice().sort(()=>Math.random()-0.5);
+
+    for(let i=0;i<list.length;i++){
+      const team = list[i];
+      let placed = false;
+
+      // try each region
+      for(const rName of regions){
+        const regionTeams = S.bracket.regions[rName];
+        // must have exactly one team of each seed per region
+        if(regionTeams.some(x=>x.seed===seed)) continue;
+        if(regionHasConfConflict(regionTeams, team, seed)) continue;
+
+        regionTeams.push({teamId:team.id, seed});
+        placed = true;
+        break;
+      }
+
+      // fallback if constraints block
+      if(!placed){
+        const rName = regions.find(r=>!S.bracket.regions[r].some(x=>x.seed===seed)) || regions[0];
+        S.bracket.regions[rName].push({teamId:team.id, seed});
+      }
+    }
+  }
+
+  // mark teams selected and store seed/region
+  for(const r of regions){
+    for(const slot of S.bracket.regions[r]){
+      const t = getTeam(slot.teamId);
+      if(!t) continue;
+      t.ncaa.selected = true;
+      t.ncaa.seed = slot.seed;
+      t.ncaa.region = r;
+      t.ncaa.line = `#${slot.seed} ${r}`;
+    }
+    // sort for display
+    S.bracket.regions[r].sort((a,b)=>a.seed-b.seed);
+  }
+
+  // First Four (simple: last 4 at-larges)
+  const last4 = atLarges.slice(-4);
+  S.bracket.firstFour = last4.map(t=>t.id);
+
+  // show seed/region popup for user if selected
+  if(my && my.ncaa.selected){
+    queueModal({
+      type:"milestone",
+      title:"NCAA TOURNAMENT SEED",
+      teamName: my.name,
+      line: `Seed #${my.ncaa.seed} in the ${my.ncaa.region} Region.`,
+      icon:"🗺️"
+    });
+  }
+}
+
+function simulateNCAATourneyWeek(week){
+  // minimal tourney sim: progress region winners based on ELO
+  if(!S.bracket || !S.bracket.field?.length) return;
+
+  const regions = GAME.REGIONS;
+  const teamById = (id)=>getTeam(id);
+
+  function winProb(A,B){
+    return eloExpected(A.elo,B.elo);
+  }
+
+  function play(Aid,Bid){
+    const A=teamById(Aid), B=teamById(Bid);
+    if(!A||!B) return Aid||Bid;
+    const pA=winProb(A,B);
+    return (Math.random()<pA) ? A.id : B.id;
+  }
+
+  // build region ordered seeds
+  const regionSeedMap = (rName)=>{
+    const arr = S.bracket.regions[rName].slice().sort((a,b)=>a.seed-b.seed);
+    const map = new Map();
+    for(const s of arr) map.set(s.seed, s.teamId);
+    return map;
+  };
+
+  // R64/R32
+  if(week===GAME.NCAA_WK1){
+    S.bracket.__aliveByRegion = {};
+    for(const r of regions){
+      const m = regionSeedMap(r);
+      const r64Pairs = [
+        [1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]
+      ].map(([a,b])=>[m.get(a), m.get(b)]);
+
+      // R64 winners
+      const r32 = r64Pairs.map(([a,b])=>play(a,b));
+
+      // R32 pairs: (1/16 winner vs 8/9 winner), etc
+      const r32Pairs = [
+        [r32[0], r32[1]],
+        [r32[2], r32[3]],
+        [r32[4], r32[5]],
+        [r32[6], r32[7]],
+      ];
+      const s16 = r32Pairs.map(([a,b])=>play(a,b));
+      S.bracket.__aliveByRegion[r] = { s16 };
+    }
+    // user popup if reached S16
+    const my=getUserTeam();
+    if(my && my.ncaa.selected){
+      const alive = regions.some(r=>S.bracket.__aliveByRegion[r].s16.includes(my.id));
+      if(alive) queueModal({type:"milestone", title:"SWEET 16!", teamName: my.name, line:"You advanced to the Sweet 16.", icon:"🔥"});
+      else queueModal({type:"milestone", title:"TOURNAMENT ENDED", teamName: my.name, line:"Your season ended in the NCAA Tournament.", icon:"🧊"});
+    }
+    return;
+  }
+
+  // S16/E8
+  if(week===GAME.NCAA_WK2){
+    S.bracket.__finalFour = [];
+    for(const r of regions){
+      const s16 = (S.bracket.__aliveByRegion?.[r]?.s16)||[];
+      if(s16.length<4) continue;
+      const e8a = play(s16[0], s16[1]);
+      const e8b = play(s16[2], s16[3]);
+      const champ = play(e8a, e8b);
+      S.bracket.__finalFour.push(champ);
+    }
+    const my=getUserTeam();
+    if(my && my.ncaa.selected){
+      const f4 = (S.bracket.__finalFour||[]).includes(my.id);
+      if(f4){
+        S.userCoach.career.f4 = (S.userCoach.career.f4||0)+1;
+        queueModal({type:"milestone", title:"FINAL FOUR!", teamName: my.name, line:"You made the Final Four.", icon:"🏟️"});
+      }
+    }
+    return;
+  }
+
+  // Final Four + Title
+  if(week===GAME.NCAA_WK3){
+    const f4 = (S.bracket.__finalFour||[]).slice();
+    if(f4.length<4){
+      // pad if needed
+      while(f4.length<4){
+        const t = U.pick(S.bracket.field);
+        if(!f4.includes(t)) f4.push(t);
+      }
+    }
+    const semi1 = play(f4[0], f4[1]);
+    const semi2 = play(f4[2], f4[3]);
+    const champ = play(semi1, semi2);
+    S.bracket.champTeamId = champ;
+
+    const champTeam = getTeam(champ);
+    if(champTeam?.staff?.HC) champTeam.staff.HC.career.natties = (champTeam.staff.HC.career.natties||0)+1;
+
+    const my=getUserTeam();
+    if(my && my.id===champ){
+      S.userCoach.career.natties = (S.userCoach.career.natties||0)+1;
+      queueModal({type:"milestone", title:"NATIONAL CHAMPIONS!", teamName: my.name, line:"You won the NCAA Championship!", icon:"🏆"});
+    } else if(my && my.ncaa.selected){
+      queueModal({type:"milestone", title:"CHAMPION CROWNED", teamName: champTeam?.name||"—", line:"A new champion is crowned.", icon:"🏆"});
+    }
+    return;
+  }
+}
+
+/* ==========================================================
+   RECRUITING (DEEPER SKELETON — READY TO EXPAND)
+========================================================== */
+const ARCH = ["Recruiter","Developer","Tactician"];
+const SKILL_NODES = {
+  Recruiter: [
+    {key:"rec_close", name:"Closer", tier:2, max:3, desc:"+Late commit odds"},
+    {key:"rec_eval", name:"Evaluator", tier:2, max:3, desc:"+Scouting accuracy"},
+    {key:"rec_visits", name:"Visit King", tier:3, max:2, desc:"+Visit impact"},
+  ],
+  Developer: [
+    {key:"dev_growth", name:"Player Growth", tier:1, max:3, desc:"+Offseason dev"},
+    {key:"dev_culture", name:"Culture", tier:2, max:3, desc:"+Retention / less transfers"},
+  ],
+  Tactician: [
+    {key:"tac_off", name:"Offense System", tier:1, max:3, desc:"+Sim offense"},
+    {key:"tac_def", name:"Defense System", tier:1, max:3, desc:"+Sim defense"},
+  ],
+};
+function makeSkillState(){
+  const out = {};
+  for(const a of ARCH){
+    out[a]={};
+    for(const n of (SKILL_NODES[a]||[])) out[a][n.key]={lvl:0,max:n.max};
+  }
+  return out;
+}
+function nodeCost(arch, key, lvl){
+  const node = (SKILL_NODES[arch]||[]).find(x=>x.key===key);
+  if(!node) return 1;
+  const base = node.tier<=2 ? 1 : 2;
+  return base + lvl;
+}
+function sumArchLevels(coach, arch){
+  const s = coach.skillsTree?.[arch] || {};
+  return Object.values(s).reduce((a,x)=>a+(x.lvl||0),0);
+}
+function addXP(coach, amt){
+  const mult = U.clamp(parseFloat(S.settings?.xpSpeed||1),0.5,4);
+  coach.xp = (coach.xp||0) + Math.round(amt*mult);
+  while(coach.xp>=100){
+    coach.xp-=100;
+    const rate = U.clamp(parseFloat(S.settings?.spRate||1),0.5,4);
+    coach.spCarry = (coach.spCarry||0) + rate;
+    while(coach.spCarry>=1){
+      coach.skillPoints++;
+      coach.spCarry -= 1;
+      toast("Skill Point","+1 earned.","good");
+    }
+  }
+}
+
+function upgradeNode(coach, arch, key){
+  const node = (SKILL_NODES[arch]||[]).find(x=>x.key===key);
+  if(!node) return;
+  const st = coach.skillsTree[arch][key];
+  if(st.lvl>=st.max) return toast("Maxed","Already maxed.","bad");
+
+  if(S.settings?.infiniteSP){
+    st.lvl++;
+    return toast("Upgraded", `${node.name} → Lv ${st.lvl} (∞)`, "good");
+  }
+  const cost = nodeCost(arch, key, st.lvl);
+  if(coach.skillPoints < cost) return toast("No Points", `Need ${cost}.`, "bad");
+  coach.skillPoints -= cost;
+  st.lvl++;
+  toast("Upgraded", `${node.name} → Lv ${st.lvl}`, "good");
+}
+
+/* recruits: position, archetype, priorities, scouting uncertainty */
+const ARCHETYPES = ["Shooter","Slasher","Floor General","Lockdown Wing","Rim Protector","Stretch Big"];
+const PRIORITIES = ["playingTime","NIL","prestige","coachDev","distance","tourneyChance"];
+
+function makeRecruit(){
+  const stars = U.pick([2,2,2,3,3,3,3,4,4,5]);
+  const baseOvr = 62 + stars*6 + U.rint(-3,3);
+  const trueOvr = U.clamp(baseOvr + (stars===5?U.rint(0,4):0), 60, 95);
+
+  // scouting uncertainty window (tightened by evaluation)
+  const range = stars>=4 ? 10 : 14;
+  const est = {
+    low: U.clamp(trueOvr - U.rint(3,range), 55, 95),
+    high: U.clamp(trueOvr + U.rint(3,range), 55, 97),
+  };
+
+  return {
+    id: U.uuid(),
+    name: genPlayerName(),
+    pos: U.pick(GAME.POS),
+    stars,
+    archetype: U.pick(ARCHETYPES),
+    priorities: U.deepCopy(PRIORITIES).sort(()=>Math.random()-0.5).slice(0,3),
+    trueOvr,
+    est,
+    pot: U.rint(0,10),
+    stage:"open",
+    offers:[],
+    delta:{}, // interest deltas by team
+    scoutedBy:{}, // teamId -> level
+    committedTo:null,
+  };
+}
+
+function buildRecruitPool(n){ return Array.from({length:n}, ()=>makeRecruit()); }
+
+function recruitingPoints(team){
+  // hoops: smaller than football
+  const rep = (team.staff?.HC?.career?.wins||0) ? 55 : 52;
+  return 240 + Math.round(team.budget*2.2) + Math.round(team.prestige*0.6) + Math.round(rep*0.4);
+}
+
+function baseRecruitInterest(team, r){
+  // fit: minutes at position (simple), prestige, budget
+  const posCount = team.roster.filter(p=>p.pos===r.pos).length;
+  const minutesNeed = Math.max(0, 4 - posCount); // crude
+  const winPct = (team.season.games? team.season.w/team.season.games : 0.5);
+  const tourney = team.resume.NETrank<=40 ? 8 : team.resume.NETrank<=80 ? 4 : 0;
+
+  return U.clamp(
+    team.prestige*0.55 + team.budget*0.25 + minutesNeed*8 + winPct*20 + tourney + U.rint(-10,10),
+    0,100
+  );
+}
+
+function recruitInterest(team, r){
+  const offerBonus = r.offers.includes(team.id) ? 8 : 0;
+  const d = r.delta[team.id] || 0;
+  return U.clamp(baseRecruitInterest(team,r) + offerBonus + d, 0, 100);
+}
+
+const RECACTIONS = {
+  contact: {label:"Contact", cost:25, eff:0.95},
+  eval:    {label:"Evaluate", cost:35, eff:0.00}, // improves scouting
+  visit:   {label:"Visit", cost:65, eff:1.70},
+  nil:     {label:"NIL Pitch", cost:55, eff:1.25},
+  close:   {label:"Hard Close", cost:80, eff:1.85},
+};
+
+function ensureOffer(team, r){
+  if(!r.offers.includes(team.id)) r.offers.push(team.id);
+  team.recruiting.offered ??= [];
+  if(!team.recruiting.offered.includes(r.id)) team.recruiting.offered.push(r.id);
+}
+
+function applyRecruitAction(team, coach, r, key){
+  const A = RECACTIONS[key];
+  if(!A) return;
+  const avail = team.recruiting.points - team.recruiting.spent;
+  if(A.cost>avail) return toast("No Points", `Only ${avail} left.`, "bad");
+
+  if(key!=="eval" && !r.offers.includes(team.id)){
+    return toast("Offer Needed","Offer first (Targets board).","bad");
+  }
+
+  team.recruiting.spent += A.cost;
+
+  if(key==="eval"){
+    // tighten estimate window; evaluator perk helps
+    const lvl = (coach.skillsTree.Recruiter.rec_eval?.lvl||0);
+    const improve = 1 + lvl;
+    const span = Math.max(4, (r.est.high - r.est.low) - improve*2);
+    const center = Math.round((r.est.high + r.est.low)/2);
+    r.est.low = U.clamp(center - Math.floor(span/2), 55, 96);
+    r.est.high = U.clamp(center + Math.ceil(span/2), 55, 97);
+    r.scoutedBy[team.id] = (r.scoutedBy[team.id]||0)+1;
+    return toast("Evaluated", `Range now ${r.est.low}-${r.est.high}`, "good");
+  }
+
+  const cur = recruitInterest(team, r);
+  const recLv = sumArchLevels(coach,"Recruiter");
+  const gain = Math.round(A.cost*(0.040 + recLv*0.012 + (team.prestige*0.0006))*A.eff*(1-cur/140)) + U.rint(-1,2);
+  r.delta[team.id] = (r.delta[team.id]||0) + gain;
+
+  toast(A.label, `+${gain} interest`, "good");
+}
+
+function resolveRecruitCommits(){
+  const teams = S.league.teams;
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+    const ranked = teams.map(t=>({id:t.id, v: recruitInterest(t,r)})).sort((a,b)=>b.v-a.v);
+    const leaderId = ranked[0].id;
+    const leader = getTeam(leaderId);
+    if(!leader) continue;
+    const hasOffer = r.offers.includes(leaderId);
+    if(!hasOffer) continue;
+
+    const v = ranked[0].v;
+    let p = 0;
+    // commits heat up late in season + right after selection sunday
+    if(S.weekIndex>=10 && v>=62) p = 0.10 + (v-62)*0.006;
+    if(S.weekIndex===GAME.SELECTION_SUNDAY_WEEK && v>=55) p = 0.22 + (v-55)*0.006;
+
+    // closer perk boosts user if leading
+    if(leaderId===S.userTeamId){
+      p *= (1 + (S.userCoach.skillsTree.Recruiter.rec_close?.lvl||0)*0.10);
+    }
+
+    if(Math.random()<U.clamp(p,0,0.60)){
+      r.stage="committed";
+      r.committedTo = leaderId;
+      leader.recruiting.commits.push(r.id);
+      if(leaderId===S.userTeamId){
+        queueModal({type:"milestone", title:"RECRUIT COMMIT", teamName: leader.name, line:`${r.stars}★ ${r.pos} ${r.name} committed.`, icon:"📝"});
+      }
+    }
+  }
+}
+
+/* signing in offseason */
+function signRecruitingClass(){
+  const teamById = new Map(S.league.teams.map(t=>[t.id,t]));
+  for(const r of S.recruits){
+    if(r.stage!=="committed" || !r.committedTo) continue;
+    const t = teamById.get(r.committedTo);
+    if(!t) continue;
+    // add as FR
+    const p = makePlayer(r.pos,"FR");
+    p.name = r.name;
+    p.ovr = U.clamp(r.trueOvr + U.rint(-3,3), 55, 95);
+    t.roster.push(p);
+    r.stage="signed";
+  }
+  // trim rosters
+  for(const t of S.league.teams){
+    t.roster.sort((a,b)=>b.ovr-a.ovr);
+    t.roster = t.roster.slice(0, GAME.ROSTER_SIZE);
+  }
+}
+
+/* ==========================================================
+   STATE
+========================================================== */
+let S=null;
+let activeTab="home";
+
+function getTeam(id){ return S.league.teams.find(t=>t.id===id); }
+function getUserTeam(){ return S?.userTeamId ? getTeam(S.userTeamId) : null; }
+
+function queueModal(obj){ S.ui.modalQueue.push(obj); }
+function clearModal(){ S.ui.modalQueue.shift(); }
+
+function newGame(){
+  const teams = buildLeague();
+  // attach AI coaches
+  for(const t of teams) t.staff = {HC: makeCoach(genCoachName())};
+
+  S = {
+    year: 2026,
+    phase: "setup",   // setup -> season -> offseason
+    weekIndex: 0,
+    league:{
+      teams,
+      schedule: buildSchedule(teams)
+    },
+    recruits: buildRecruitPool(GAME.RECRUIT_POOL),
+    bracket: null,
+    userCoach: null,
+    userTeamId: null,
+    settings:{
+      xpSpeed:1,
+      spRate:1,
+      infiniteSP:false
+    },
+    ui:{
+      modalQueue: [],
+      rankingView: "NET", // NET | RPI
+      recruitFilters:{pos:"", stars:"", sort:"net", board:"all"},
+      rosterPos:""
+    }
+  };
+}
+
+/* reset season data */
+function resetForNewSeason(){
+  S.league.schedule = buildSchedule(S.league.teams);
+  S.bracket = null;
+  S.recruits = buildRecruitPool(GAME.RECRUIT_POOL);
+
+  for(const t of S.league.teams){
+    t.season = { w:0,l:0, confW:0, confL:0, pf:0, pa:0, games:0 };
+    t.gameLog = [];
+    t.resume = blankResume();
+    t.confChamp=false;
+    t.autoBid=false;
+    t.ncaa={ selected:false, seed:0, region:"", line:"" };
+    t.recruiting = { points:0, spent:0, offered:[], commits:[] };
+    // mild offseason drift
+    t.off = U.clamp(t.off + U.rint(-2,2), 25, 95);
+    t.def = U.clamp(t.def + U.rint(-2,2), 25, 95);
+    t.elo = 1500 + (t.ovr-70)*12 + U.rint(-60,60);
+  }
+
+  // budgets
+  refreshRecruitBudgets();
+  recomputeResumes();
+}
+
+function refreshRecruitBudgets(){
+  for(const t of S.league.teams){
+    t.recruiting = t.recruiting || {points:0, spent:0, offered:[], commits:[]};
+    t.recruiting.points = recruitingPoints(t);
+    t.recruiting.spent = 0;
+  }
+}
+
+/* ==========================================================
+   ADVANCE ENGINE
+========================================================== */
+
+function simWeek(){
+  const wk = S.weekIndex;
+  const sched = S.league.schedule[wk-1];
+  if(!sched) return;
+
+  const my = getUserTeam();
+  for(const g of sched.games){
+    if(g.played) continue;
+    const H = getTeam(g.home), A = getTeam(g.away);
+    const res = simGame(H,A, g.neutral);
+    g.played=true; g.scoreH=res.scoreH; g.scoreA=res.scoreA;
+
+    applyResult({scoreH:res.scoreH, scoreA:res.scoreA, neutral:g.neutral, isConf:g.isConf}, H, A);
+
+    // coach W/L (AI + user)
+    const hC = H.staff?.HC, aC=A.staff?.HC;
+    if(res.scoreH>res.scoreA){
+      if(hC) hC.career.wins++;
+      if(aC) aC.career.losses++;
+    } else {
+      if(aC) aC.career.wins++;
+      if(hC) hC.career.losses++;
+    }
+
+    if(my && (H.id===my.id || A.id===my.id)){
+      const myHome = (H.id===my.id);
+      const myPts = myHome ? res.scoreH : res.scoreA;
+      const oppPts = myHome ? res.scoreA : res.scoreH;
+      const oppName = myHome ? A.name : H.name;
+      const win = (myPts>oppPts);
+
+      toast(win?"Win":"Loss", `${my.name} ${myPts}-${oppPts} ${oppName}`, win?"good":"bad");
+      addXP(S.userCoach, win?14:9);
+      if(win) S.userCoach.career.wins++; else S.userCoach.career.losses++;
+    }
+  }
+
+  recomputeResumes();
+  resolveRecruitCommits();
+}
+
+function advance(){
+  if(!S) return;
+  if(S.ui.modalQueue.length) return;
+
+  if(S.phase==="setup"){
+    return toast("Setup","Create coach and pick a team.","warn");
+  }
+
+  if(S.phase==="season" && S.weekIndex===0){
+    resetForNewSeason();
+    S.weekIndex = 1;
+    toast("Season Start", `Year ${S.year} begins.`, "good");
+    return;
+  }
+
+  // Regular season weeks 1-15
+  if(S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS){
+    simWeek();
+    S.weekIndex += 1;
+
+    if(S.weekIndex<=GAME.REG_WEEKS){
+      refreshRecruitBudgets();
+      toast("New Week", `${weekName(S.weekIndex)} • Recruiting points reset.`, "good");
+    }
+
+    if(S.weekIndex===GAME.CONF_TOURNEY_WEEK){
+      toast("Next","Conference Tournament week.","good");
+    }
+    return;
+  }
+
+  // Conference Tourney
+  if(S.phase==="season" && S.weekIndex===GAME.CONF_TOURNEY_WEEK){
+    simulateConfTourney();
+    // small resume recompute to reflect prestige shifts (still based on games)
+    recomputeResumes();
+
+    // user popup: did you win conf?
+    const my = getUserTeam();
+    if(my){
+      queueModal({
+        type:"milestone",
+        title:"CONFERENCE TOURNAMENT",
+        teamName: my.name,
+        line: my.autoBid ? "You won your conference tournament (AUTO BID)!" : "No auto-bid. You need an at-large.",
+        icon: my.autoBid ? "🏆" : "🧾"
+      });
+    }
+
+    S.weekIndex = GAME.SELECTION_SUNDAY_WEEK;
+    return;
+  }
+
+  // Selection Sunday -> build bracket and show popups
+  if(S.phase==="season" && S.weekIndex===GAME.SELECTION_SUNDAY_WEEK){
+    buildBracket();
+    // after acknowledging popups, user can advance into NCAA week 1
+    S.weekIndex = GAME.NCAA_WK1;
+    return;
+  }
+
+  // NCAA Tournament weeks
+  if(S.phase==="season" && [GAME.NCAA_WK1, GAME.NCAA_WK2, GAME.NCAA_WK3].includes(S.weekIndex)){
+    simulateNCAATourneyWeek(S.weekIndex);
+
+    if(S.ui.modalQueue.length) return;
+
+    if(S.weekIndex===GAME.NCAA_WK1) S.weekIndex = GAME.NCAA_WK2;
+    else if(S.weekIndex===GAME.NCAA_WK2) S.weekIndex = GAME.NCAA_WK3;
+    else {
+      // offseason: sign recruits, develop, advance year
+      S.phase = "offseason";
+      toast("Offseason","Recruit signing + development.", "good");
+    }
+    return;
+  }
+
+  // Offseason (simple)
+  if(S.phase==="offseason"){
+    // sign class
+    signRecruitingClass();
+
+    // year advance: players progress + graduate
+    for(const t of S.league.teams){
+      // graduate SR
+      t.roster = t.roster.filter(p=>p.year!=="SR");
+      // advance years
+      for(const p of t.roster){
+        if(p.year==="FR") p.year="SO";
+        else if(p.year==="SO") p.year="JR";
+        else if(p.year==="JR") p.year="SR";
+        // offseason growth
+        p.ovr = U.clamp(p.ovr + U.rint(0,3) + (p.pot>6?1:0), 55, 99);
+      }
+      // refill if short
+      while(t.roster.length<GAME.ROSTER_SIZE){
+        t.roster.push(makePlayer(U.pick(GAME.POS),"FR"));
+      }
+      // keep cap
+      t.roster.sort((a,b)=>b.ovr-a.ovr);
+      t.roster = t.roster.slice(0, GAME.ROSTER_SIZE);
+
+      // coach seasons
+      if(t.staff?.HC) t.staff.HC.years = (t.staff.HC.years||0)+1;
+    }
+
+    // user seasons
+    S.userCoach.years = (S.userCoach.years||0)+1;
+
+    // new year
+    S.year += 1;
+    S.phase = "season";
+    S.weekIndex = 0;
+    toast("New Year", `Welcome to ${S.year}.`, "good");
+    return;
+  }
+}
+
+/* ==========================================================
+   SAVE / LOAD
+========================================================== */
+async function save(){
+  if(!S) return;
+  const ok = await STORE.set(GAME.SAVE_KEY, S);
+  if(!ok) toast("Storage Full","Could not save.","bad");
+  updateSubline();
+}
+async function loadSave(){ return await STORE.get(GAME.SAVE_KEY); }
+async function hardReset(){ await STORE.del(GAME.SAVE_KEY); S=null; }
+
+/* ==========================================================
+   UI: Drawer + Tabs
+========================================================== */
+function drawerOpen(){ document.getElementById("drawer").classList.add("open"); }
+function drawerClose(){ document.getElementById("drawer").classList.remove("open"); }
+
+const TABS = [
+  {id:"home", label:"Home", ico:"🏠"},
+  {id:"rankings", label:"Rankings", ico:"📊"},
+  {id:"bracket", label:"Bracket", ico:"🗺️"},
+  {id:"coach", label:"Coach", ico:"🧠"},
+  {id:"recruit", label:"Recruiting", ico:"⭐"},
+  {id:"roster", label:"Roster", ico:"📋"},
+  {id:"schedule", label:"Schedule", ico:"🗓️"},
+  {id:"settings", label:"Settings", ico:"⚙️"},
+];
+
+function renderDrawerNav(){
+  const list = document.getElementById("navList");
+  list.innerHTML = TABS.map(t=>{
+    const a = (t.id===activeTab) ? "active" : "";
+    return `
+      <div class="navItem ${a}" data-act="tab" data-tab="${t.id}">
+        <div class="l"><span>${t.ico}</span><span>${U.safe(t.label)}</span></div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateSubline(){
+  const el = document.getElementById("subLine");
+  if(!S){ el.textContent="No save loaded."; return; }
+  const team = getUserTeam();
+  const wk = weekName(S.weekIndex);
+  if(team && S.userCoach){
+    const net = team.resume.NETrank<=25 ? ` • NET #${team.resume.NETrank}` : "";
+    const rpi = team.resume.RPIrank<=25 ? ` • RPI #${team.resume.RPIrank}` : "";
+    el.textContent = `Year ${S.year} • ${wk} • ${team.name} (${team.season.w}-${team.season.l})${net}${rpi}`;
+  } else el.textContent = `Year ${S.year} • ${wk} • Setup`;
+}
+
+/* ==========================================================
+   OVERLAY MODALS
+========================================================== */
+function renderOverlay(){
+  const root = document.getElementById("overlayRoot");
+  root.innerHTML = "";
+  if(!S?.ui?.modalQueue?.length) return;
+  const m = S.ui.modalQueue[0];
+
+  root.innerHTML = `
+    <div class="overlay">
+      <div class="modal">
+        <div class="hero">
+          <div>
+            <div class="big">${U.safe(m.title||"Update")} — ${U.safe(m.teamName||"")}</div>
+            <div class="subt">${U.safe(m.line||"")}</div>
+          </div>
+          <div class="logo">${U.safe(m.icon||"🏀")}</div>
+        </div>
+        <div class="sep"></div>
+        <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+      </div>
+    </div>
+  `;
+}
+
+/* ==========================================================
+   VIEWS
+========================================================== */
+
+function renderHome(){
+  if(!S.userCoach || !S.userTeamId){
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Create Coach</h2>
+          <label>Coach Name</label>
+          <input id="coach_name" placeholder="Your coach name"/>
+          <div class="sep"></div>
+          <button class="btnAccent" data-act="create_coach">Create Coach</button>
+          <div class="hint">Basketball version starts as Head Coach.</div>
+        </div>
+
+        <div class="card">
+          <h2>Pick Team</h2>
+          <div class="muted">Pick any team (we can add “Bottom 25 only” toggle if you want).</div>
+          <div class="sep"></div>
+          <button class="btnGood" data-act="team_picker">Select Team</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const t=getUserTeam();
+  const remain = (t.recruiting?.points||0) - (t.recruiting?.spent||0);
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="rowBetween">
+          <h2>${U.safe(t.name)} Hub</h2>
+          <span class="badge bAcc">${U.safe(weekName(S.weekIndex))}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">REC</span>${t.season.w}-${t.season.l}</span>
+          <span class="chip"><span class="k">CONF</span>${t.season.confW}-${t.season.confL}</span>
+          <span class="chip"><span class="k">NET</span>${t.resume.NETrank<999?("#"+t.resume.NETrank):"—"}</span>
+          <span class="chip"><span class="k">RPI</span>${t.resume.RPIrank<999?("#"+t.resume.RPIrank):"—"}</span>
+          <span class="chip"><span class="k">PTS</span>${remain}/${t.recruiting.points||0}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <button class="btnAccent" data-act="advance">Advance</button>
+          <button data-act="sim">Sim</button>
+          <button data-act="tab" data-tab="rankings">Rankings</button>
+          <button data-act="tab" data-tab="bracket">Bracket</button>
+        </div>
+        <div class="hint">NET/RPI update after every week. Selection Sunday builds the bracket and regions.</div>
+      </div>
+
+      <div class="card">
+        <h2>Coach</h2>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">NAME</span>${U.safe(S.userCoach.name)}</span>
+          <span class="chip"><span class="k">SP</span>${S.settings.infiniteSP?"∞":S.userCoach.skillPoints}</span>
+          <span class="chip"><span class="k">XP</span>${S.userCoach.xp||0}/100</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">CAREER</span>${S.userCoach.career.wins||0}-${S.userCoach.career.losses||0}</span>
+          <span class="chip"><span class="k">TOURNEYS</span>${S.userCoach.career.tourneyApps||0}</span>
+          <span class="chip"><span class="k">F4</span>${S.userCoach.career.f4||0}</span>
+          <span class="chip"><span class="k">NATTIES</span>${S.userCoach.career.natties||0}</span>
+        </div>
+        <div class="hint">XP ${S.settings.xpSpeed}x • SP ${S.settings.spRate}x</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRankings(){
+  const t=getUserTeam();
+  if(!t) return `<div class="card"><h2>Rankings</h2><div class="muted">Pick a team first.</div></div>`;
+
+  const view = S.ui.rankingView || "NET";
+  const teams = S.league.teams.slice().sort((a,b)=>{
+    if(view==="RPI") return a.resume.RPIrank - b.resume.RPIrank;
+    return a.resume.NETrank - b.resume.NETrank;
+  }).slice(0,25);
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>${view} Top 25</h2>
+        <span class="badge bAcc">${U.safe(weekName(S.weekIndex))}</span>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <button class="${view==="NET"?"btnAccent":""}" data-act="rank_view" data-view="NET">NET</button>
+        <button class="${view==="RPI"?"btnAccent":""}" data-act="rank_view" data-view="RPI">RPI</button>
+      </div>
+      <div class="hint">
+        NET is a resume/quality hybrid (ELO+SOS+Q-record). RPI is classic WP/OWP/OOWP.
+      </div>
+      <div class="sep"></div>
+
+      <div class="list">
+        ${teams.map((x,i)=>{
+          const isYou = (t.id===x.id);
+          const rec = `${x.season.w}-${x.season.l}`;
+          const q = `Q1 ${x.resume.Q1W}-${x.resume.Q1L} • Q2 ${x.resume.Q2W}-${x.resume.Q2L}`;
+          const badge = view==="NET" ? `#${x.resume.NETrank}` : `#${x.resume.RPIrank}`;
+          return `
+            <div class="itemCard" style="${isYou?'border-color: rgba(78,224,138,.55); background: rgba(78,224,138,.07);':''}">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">#${i+1} ${U.safe(x.name)} ${isYou?'<span class="badge bGood">YOU</span>':''}</div>
+                  <div class="itemMeta">${U.safe(x.conf)} • ${rec} • ${q} • Bad L ${x.resume.badLosses}</div>
+                </div>
+                <span class="badge bAcc">${badge}</span>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderBracket(){
+  const t=getUserTeam();
+  if(!t) return `<div class="card"><h2>Bracket</h2><div class="muted">Pick a team first.</div></div>`;
+
+  if(!S.bracket || !S.bracket.field?.length){
+    return `
+      <div class="card">
+        <h2>Bracket</h2>
+        <div class="muted">No bracket yet. It is generated on Selection Sunday (Week ${GAME.SELECTION_SUNDAY_WEEK}).</div>
+        <div class="sep"></div>
+        <div class="itemCard">
+          <div class="itemTitle">Your status</div>
+          <div class="itemMeta">
+            NET #${t.resume.NETrank} • RPI #${t.resume.RPIrank} • Q1 ${t.resume.Q1W}-${t.resume.Q1L} • Q2 ${t.resume.Q2W}-${t.resume.Q2L}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  const regions = GAME.REGIONS;
+  const my = t;
+  const myLine = my.ncaa.selected ? `${my.ncaa.line}` : "Not selected";
+
+  function regionBlock(r){
+    const slots = S.bracket.regions[r] || [];
+    // display as seed list
+    return `
+      <div class="itemCard">
+        <div class="itemTop">
+          <div class="itemTitle">${r} Region</div>
+          <span class="badge bAcc2">${slots.length? "Field" : "—"}</span>
+        </div>
+        <div class="sep"></div>
+        <table class="smallTable">
+          <thead><tr><th>Seed</th><th>Team</th><th>Conf</th></tr></thead>
+          <tbody>
+            ${slots.map(s=>{
+              const tm=getTeam(s.teamId);
+              const you = tm?.id===my.id;
+              return `<tr style="${you?'background: rgba(78,224,138,.07);':''}">
+                <td>#${s.seed}</td>
+                <td>${U.safe(tm?.name||"—")} ${you?'<span class="badge bGood">YOU</span>':''}</td>
+                <td>${U.safe(tm?.conf||"—")}</td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>NCAA Tournament Bracket</h2>
+        <span class="badge bAcc">${U.safe(weekName(S.weekIndex))}</span>
+      </div>
+      <div class="sep"></div>
+      <div class="row">
+        <span class="chip"><span class="k">YOU</span>${U.safe(my.name)}</span>
+        <span class="chip"><span class="k">STATUS</span>${U.safe(myLine)}</span>
+        <span class="chip"><span class="k">CHAMP</span>${S.bracket.champTeamId ? U.safe(getTeam(S.bracket.champTeamId)?.name||"—") : "—"}</span>
+      </div>
+      <div class="sep"></div>
+      <div class="list">
+        ${regions.map(regionBlock).join("")}
+      </div>
+      <div class="hint">Conference separation is enforced for Round of 64 when possible (fallback if blocked).</div>
+    </div>
+  `;
+}
+
+function renderCoach(){
+  const c = S.userCoach;
+  const t = getUserTeam();
+  if(!c || !t) return `<div class="card"><h2>Coach</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const xpPct = Math.round(((c.xp||0)/100)*100);
+  const xpBar = `<div class="progress"><div class="bar" style="width:${xpPct}%;"></div></div>`;
+
+  const blocks = ARCH.map(arch=>{
+    const nodes = (SKILL_NODES[arch]||[]).map(n=>{
+      const st = c.skillsTree[arch][n.key];
+      const cost = nodeCost(arch, n.key, st.lvl);
+      const dis = (st.lvl>=st.max) ? "disabled" : (!S.settings.infiniteSP && c.skillPoints<cost ? "disabled":"");
+      return `
+        <div class="itemCard">
+          <div class="itemTop">
+            <div>
+              <div class="itemTitle">${U.safe(n.name)} <span class="badge bAcc2">Tier ${n.tier}</span></div>
+              <div class="itemMeta">${U.safe(n.desc)} • Lv ${st.lvl}/${st.max}</div>
+            </div>
+            <button class="btnAccent" data-act="perk" data-arch="${U.safe(arch)}" data-key="${U.safe(n.key)}" ${dis}>Cost ${S.settings.infiniteSP?"∞":cost}</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    return `<div class="sep"></div><h2>${U.safe(arch)} <span class="badge bAcc2">Levels ${sumArchLevels(c,arch)}</span></h2><div class="list">${nodes}</div>`;
+  }).join("");
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>${U.safe(c.name)}</h2>
+        <div class="row">
+          <span class="chip"><span class="k">TEAM</span>${U.safe(t.name)}</span>
+          <span class="chip"><span class="k">SP</span>${S.settings.infiniteSP ? "∞" : c.skillPoints}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">XP</div>
+        ${xpBar}
+        <div class="muted mini">${S.settings.infiniteSP ? "∞" : ((c.xp||0)+"/100")}</div>
+      </div>
+      <div class="card">
+        <h2>Skill Tree</h2>
+        <div class="muted mini">This is the base “CFB-style” structure. We can expand nodes later.</div>
+        ${blocks}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecruiting(){
+  const t=getUserTeam(), c=S.userCoach;
+  if(!t||!c) return `<div class="card"><h2>Recruiting</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const open = (S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS) || (S.phase==="offseason");
+  if(!open) return `<div class="card"><h2>Recruiting</h2><div class="muted">Recruiting is open Weeks 1–15 and offseason.</div></div>`;
+
+  const remain = t.recruiting.points - t.recruiting.spent;
+  const f = S.ui.recruitFilters;
+  let list = S.recruits.filter(r=>r.stage==="open");
+
+  if((f.board||"all")==="targets"){
+    const set = new Set(t.recruiting.offered||[]);
+    list = list.filter(r=>set.has(r.id));
+  }
+  if(f.pos) list = list.filter(r=>r.pos===f.pos);
+  if(f.stars) list = list.filter(r=>r.stars>=parseInt(f.stars,10));
+
+  if(f.sort==="stars") list.sort((a,b)=>b.stars-a.stars || b.trueOvr-a.trueOvr);
+  else if(f.sort==="ovr") list.sort((a,b)=>b.trueOvr-a.trueOvr);
+  else {
+    // net sort: teams with higher prestige get better pull; just show by stars/ovr
+    list.sort((a,b)=>b.stars-a.stars || b.trueOvr-a.trueOvr);
+  }
+
+  list = list.slice(0, 90);
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Recruiting Board</h2>
+        <span class="badge bAcc">Pts ${remain}/${t.recruiting.points}</span>
+      </div>
+      <div class="sep"></div>
+
+      <div class="twoCol">
+        <div>
+          <label>Position</label>
+          <select id="rf_pos">
+            <option value="">All</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${f.pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Min Stars</label>
+          <select id="rf_stars">
+            <option value="">Any</option>
+            ${[2,3,4,5].map(x=>`<option value="${x}" ${f.stars==x?"selected":""}>${x}★+</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="rf_sort">
+            <option value="net" ${f.sort==="net"?"selected":""}>Default</option>
+            <option value="stars" ${f.sort==="stars"?"selected":""}>Stars</option>
+            <option value="ovr" ${f.sort==="ovr"?"selected":""}>True OVR</option>
+          </select>
+        </div>
+        <div>
+          <label>Board</label>
+          <select id="rf_board">
+            <option value="all" ${(f.board||"all")==="all"?"selected":""}>All</option>
+            <option value="targets" ${(f.board||"all")==="targets"?"selected":""}>Targets (Offered)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btnAccent" data-act="rf_apply">Apply</button>
+        <button data-act="rf_clear">Clear</button>
+      </div>
+
+      <div class="sep"></div>
+      <div class="list">
+        ${list.map(r=>{
+          const offered = r.offers.includes(t.id);
+          const it = recruitInterest(t,r);
+          const sc = r.scoutedBy[t.id]||0;
+          const est = `${r.est.low}-${r.est.high}`;
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${"★".repeat(r.stars)} <span class="badge bAcc">Est ${est}</span> ${U.safe(r.name)}</div>
+                  <div class="itemMeta">${r.pos} • ${U.safe(r.archetype)} • Priorities: ${r.priorities.join(", ")} • Scout Lv ${sc}</div>
+                </div>
+                <span class="badge bAcc2">Interest ${it}/100</span>
+              </div>
+
+              <div style="margin-top:8px">
+                <div class="progress"><div class="bar" style="width:${it}%;"></div></div>
+              </div>
+
+              <div class="actionLine">
+                <button data-act="offer" data-id="${r.id}" ${offered?"disabled":""}>${offered?"Offered":"Offer"}</button>
+                <button class="btnAccent" data-act="rec_act" data-id="${r.id}" data-kind="contact" ${remain<RECACTIONS.contact.cost?"disabled":""}>Contact</button>
+                <button data-act="rec_act" data-id="${r.id}" data-kind="eval" ${remain<RECACTIONS.eval.cost?"disabled":""}>Evaluate</button>
+                <button class="btnWarn" data-act="rec_act" data-id="${r.id}" data-kind="nil" ${remain<RECACTIONS.nil.cost?"disabled":""}>NIL</button>
+                <button class="btnGood" data-act="rec_act" data-id="${r.id}" data-kind="visit" ${remain<RECACTIONS.visit.cost?"disabled":""}>Visit</button>
+                <button class="btnDanger" data-act="rec_act" data-id="${r.id}" data-kind="close" ${remain<RECACTIONS.close.cost?"disabled":""}>Close</button>
+              </div>
+
+              <div class="hint">Offers auto-add to Targets board. Evaluate tightens OVR range. Commitments spike late season + Selection Sunday.</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderRoster(){
+  const t=getUserTeam();
+  if(!t) return `<div class="card"><h2>Roster</h2><div class="muted">Pick a team first.</div></div>`;
+
+  const pos = S.ui.rosterPos || "";
+  let rows = t.roster.slice();
+  if(pos) rows = rows.filter(p=>p.pos===pos);
+  rows.sort((a,b)=>a.pos.localeCompare(b.pos)||b.ovr-a.ovr);
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>${U.safe(t.name)} Roster</h2>
+        <span class="badge bAcc">${t.roster.length}/${GAME.ROSTER_SIZE}</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>View by Position</label>
+          <select id="rv_pos">
+            <option value="">All</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+          <div class="row" style="margin-top:10px">
+            <button class="btnAccent" data-act="rv_apply">Apply</button>
+            <button data-act="rv_clear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label>Resume Snapshot</label>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+            <span class="badge bAcc">NET #${t.resume.NETrank}</span>
+            <span class="badge bAcc2">RPI #${t.resume.RPIrank}</span>
+            <span class="badge bGood">Q1 ${t.resume.Q1W}-${t.resume.Q1L}</span>
+            <span class="badge bWarn">Bad L ${t.resume.badLosses}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="list">
+        ${rows.map(p=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle"><span class="badge bAcc2">${p.pos}</span> <span class="badge bAcc">OVR ${p.ovr}</span> ${U.safe(p.name)}</div>
+                <div class="itemMeta">${p.year} • Pot ${p.pot}</div>
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="hint">“Real rosters” requires importing roster data. This build supports importing in Settings (JSON). We'll wire team-name matching next.</div>
+    </div>
+  `;
+}
+
+function renderSchedule(){
+  const t=getUserTeam();
+  if(!t) return `<div class="card"><h2>Schedule</h2><div class="muted">Pick a team first.</div></div>`;
+
+  const items=[];
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const wk = S.league.schedule[w-1];
+    const mine = (wk?.games||[]).filter(g=>g.home===t.id || g.away===t.id);
+    if(!mine.length){
+      items.push({w, lines:["BYE"], done:false});
+      continue;
+    }
+    const lines = mine.map(g=>{
+      const H=getTeam(g.home), A=getTeam(g.away);
+      const opp = (g.home===t.id) ? A.name : H.name;
+      const loc = g.neutral ? "N" : ((g.home===t.id) ? "H" : "A");
+      const res = g.played ? ((g.home===t.id)? `${g.scoreH}-${g.scoreA}` : `${g.scoreA}-${g.scoreH}`) : "—";
+      return `${loc} vs ${opp} • ${res}`;
+    });
+    items.push({w, lines, done: mine.every(g=>g.played)});
+  }
+
+  return `
+    <div class="card">
+      <h2>${U.safe(t.name)} Schedule</h2>
+      <div class="sep"></div>
+      <div class="list">
+        ${items.map(x=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div class="itemTitle">Week ${x.w}</div>
+              <span class="badge ${x.done?'bGood':'bAcc2'}">${x.done?'Done':'Pending'}</span>
+            </div>
+            <div class="itemMeta">${x.lines.map(l=>U.safe(l)).join(" • ")}</div>
+          </div>
+        `).join("")}
+        <div class="itemCard">
+          <div class="itemTitle">Postseason</div>
+          <div class="itemMeta">
+            Week ${GAME.CONF_TOURNEY_WEEK}: Conf Tourney • Week ${GAME.SELECTION_SUNDAY_WEEK}: Selection Sunday • Weeks ${GAME.NCAA_WK1}-${GAME.NCAA_WK3}: NCAA Tourney
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSettings(){
+  const s=S.settings||{};
+  return `
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="sep"></div>
+
+      <label>XP Gain Speed</label>
+      <select id="set_xp">
+        ${[0.5,1,2,3,4].map(v=>`<option value="${v}" ${parseFloat(s.xpSpeed||1)==v?"selected":""}>${v}x</option>`).join("")}
+      </select>
+
+      <label>Skill Point Earn Rate</label>
+      <select id="set_sp">
+        ${[0.5,1,2,3,4].map(v=>`<option value="${v}" ${parseFloat(s.spRate||1)==v?"selected":""}>${v}x</option>`).join("")}
+      </select>
+
+      <label>Infinite Skill Points</label>
+      <select id="set_inf">
+        <option value="0" ${!s.infiniteSP?"selected":""}>Off</option>
+        <option value="1" ${s.infiniteSP?"selected":""}>On</option>
+      </select>
+
+      <div class="sep"></div>
+      <button class="btnAccent" data-act="save_settings">Save Settings</button>
+
+      <div class="sep"></div>
+      <h2>Roster Import (Optional)</h2>
+      <div class="muted mini">
+        “Real rosters” are too big to hardcode cleanly into one file. The correct way is import.
+      </div>
+      <label>Paste Roster JSON</label>
+      <textarea id="roster_json" rows="6" placeholder='{"teams":[{"name":"Duke","players":[{"name":"...","pos":"PG","year":"FR","ovr":82}]}]}'></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btnGood" data-act="import_rosters">Import Rosters</button>
+      </div>
+      <div class="hint">
+        Import matches by team name (exact). If you want, I’ll add a fuzzy matcher next so “Central Valley” can map to “Central Valley University” etc.
+      </div>
+    </div>
+  `;
+}
+
+/* Team picker */
+function openTeamPicker(){
+  const all = S.league.teams.slice().sort((a,b)=>b.prestige-a.prestige);
+  document.getElementById("app").innerHTML = `
+    <div class="card">
+      <h2>Pick Your Team</h2>
+      <div class="muted">Any team allowed in this build. (We can add “start low-major” rules.)</div>
+      <div class="sep"></div>
+      <div class="list">
+        ${all.map(t=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${U.safe(t.name)}</div>
+                <div class="itemMeta">${U.safe(t.conf)} • Prest ${t.prestige} • ELO ${Math.round(t.elo)}</div>
+              </div>
+              <button class="btnGood" data-act="select_team" data-team="${t.id}">Select</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="sep"></div>
+      <button data-act="close_picker">Back</button>
+    </div>
+  `;
+}
+
+/* Render */
+function render(){
+  updateSubline();
+  renderDrawerNav();
+  const app = document.getElementById("app");
+
+  if(!S){
+    app.innerHTML = `
+      <div class="card">
+        <h2>Welcome</h2>
+        <div class="muted">No save found. Start a new dynasty.</div>
+        <div class="sep"></div>
+        <button class="btnAccent" data-act="new_game">New Game</button>
+        <button data-act="load">Load Save</button>
+      </div>
+    `;
+    renderOverlay();
+    return;
+  }
+
+  const view = ({
+    home: renderHome,
+    rankings: renderRankings,
+    bracket: renderBracket,
+    coach: renderCoach,
+    recruit: renderRecruiting,
+    roster: renderRoster,
+    schedule: renderSchedule,
+    settings: renderSettings,
+  }[activeTab] || renderHome)();
+
+  app.innerHTML = view;
+  renderOverlay();
+}
+
+/* ==========================================================
+   ACTION HANDLER
+========================================================== */
+async function handle(act, el){
+  try{
+    if(act==="drawer_open"){ drawerOpen(); return; }
+    if(act==="drawer_close"){ drawerClose(); return; }
+
+    if(act==="new_game"){ newGame(); await save(); toast("New Game","Dynasty created.","good"); render(); return; }
+    if(act==="load"){
+      const v=await loadSave();
+      if(!v){toast("No Save","No save found.","bad");return;}
+      S=v;
+
+      // backfill
+      S.settings ??= {xpSpeed:1, spRate:1, infiniteSP:false};
+      S.ui ??= { modalQueue:[], rankingView:"NET", recruitFilters:{pos:"",stars:"",sort:"net",board:"all"}, rosterPos:"" };
+      S.ui.modalQueue ??= [];
+
+      // ensure resume objects exist
+      for(const t of S.league.teams){
+        t.resume ??= blankResume();
+        t.gameLog ??= [];
+        t.recruiting ??= {points:0, spent:0, offered:[], commits:[]};
+        t.staff ??= {HC: makeCoach(genCoachName())};
+        if(!t.staff.HC.skillsTree) t.staff.HC.skillsTree = makeSkillState();
+      }
+      if(S.userCoach && !S.userCoach.skillsTree) S.userCoach.skillsTree = makeSkillState();
+
+      recomputeResumes();
+      refreshRecruitBudgets();
+
+      toast("Loaded","Save loaded.","good");
+      render(); return;
+    }
+
+    if(act==="save"){ await save(); toast("Saved","Saved.","good"); render(); return; }
+    if(act==="hard_reset"){ await hardReset(); toast("Reset","Save deleted.","warn"); render(); return; }
+
+    if(act==="tab"){ activeTab = el.dataset.tab; drawerClose(); render(); return; }
+
+    if(act==="modal_ack"){ clearModal(); await save(); render(); return; }
+
+    if(act==="rank_view"){
+      S.ui.rankingView = el.dataset.view || "NET";
+      await save(); render(); return;
+    }
+
+    if(act==="create_coach"){
+      const name = (document.getElementById("coach_name")?.value||"").trim() || ("Coach " + U.pick(NAME.coachLast));
+      S.userCoach = makeCoach(name);
+      S.userCoach.skillsTree = makeSkillState();
+      S.userCoach.spCarry = 0;
+      toast("Coach Created", `${S.userCoach.name} (HC)`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="team_picker"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      openTeamPicker();
+      return;
+    }
+    if(act==="close_picker"){ render(); return; }
+
+    if(act==="select_team"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      const team = getTeam(el.dataset.team);
+      if(!team) return;
+
+      S.userTeamId = team.id;
+      team.staff = team.staff || {};
+      team.staff.HC = S.userCoach;
+
+      S.phase = "season";
+      S.weekIndex = 0;
+
+      // initialize budgets/resumes
+      refreshRecruitBudgets();
+      recomputeResumes();
+
+      toast("Team Selected", `${team.name} • HC`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="advance" || act==="sim"){ advance(); await save(); render(); return; }
+
+    if(act==="perk"){
+      upgradeNode(S.userCoach, el.dataset.arch, el.dataset.key);
+      await save(); render(); return;
+    }
+
+    if(act==="offer"){
+      const t=getUserTeam();
+      const r=S.recruits.find(x=>x.id===el.dataset.id);
+      if(!t||!r) return;
+      ensureOffer(t,r);
+      toast("Offer Sent", `${r.stars}★ ${r.pos} ${r.name}`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="rec_act"){
+      const t=getUserTeam();
+      const r=S.recruits.find(x=>x.id===el.dataset.id);
+      if(!t||!r) return;
+      applyRecruitAction(t, S.userCoach, r, el.dataset.kind);
+      await save(); render(); return;
+    }
+
+    if(act==="rf_apply"){
+      S.ui.recruitFilters.pos = document.getElementById("rf_pos")?.value||"";
+      S.ui.recruitFilters.stars = document.getElementById("rf_stars")?.value||"";
+      S.ui.recruitFilters.sort = document.getElementById("rf_sort")?.value||"net";
+      S.ui.recruitFilters.board = document.getElementById("rf_board")?.value||"all";
+      await save(); render(); return;
+    }
+    if(act==="rf_clear"){
+      S.ui.recruitFilters = {pos:"",stars:"",sort:"net",board:"all"};
+      await save(); render(); return;
+    }
+
+    if(act==="rv_apply"){ S.ui.rosterPos = document.getElementById("rv_pos")?.value||""; await save(); render(); return; }
+    if(act==="rv_clear"){ S.ui.rosterPos = ""; await save(); render(); return; }
+
+    if(act==="save_settings"){
+      S.settings.xpSpeed = parseFloat(document.getElementById("set_xp")?.value||"1");
+      S.settings.spRate = parseFloat(document.getElementById("set_sp")?.value||"1");
+      S.settings.infiniteSP = (document.getElementById("set_inf")?.value==="1");
+      toast("Settings Saved","Applied.", "good");
+      await save(); render(); return;
+    }
+
+    if(act==="import_rosters"){
+      const txt = (document.getElementById("roster_json")?.value||"").trim();
+      if(!txt) return toast("No Data","Paste JSON first.","bad");
+      let obj=null;
+      try{ obj=JSON.parse(txt); }catch(e){ return toast("Bad JSON", e.message, "bad"); }
+      const teams = obj?.teams;
+      if(!Array.isArray(teams)) return toast("Format Error","Expected {teams:[...]}.","bad");
+
+      const mapByName = new Map(S.league.teams.map(t=>[t.name.toLowerCase(), t]));
+      let applied=0, skipped=0;
+
+      for(const T of teams){
+        const name = (T.name||"").toLowerCase();
+        const team = mapByName.get(name);
+        if(!team){ skipped++; continue; }
+        if(!Array.isArray(T.players)){ skipped++; continue; }
+
+        const players = T.players.slice(0, GAME.ROSTER_SIZE).map(p=>{
+          const pos = GAME.POS.includes(p.pos) ? p.pos : U.pick(GAME.POS);
+          const year = ["FR","SO","JR","SR"].includes(p.year) ? p.year : "FR";
+          const pl = makePlayer(pos, year);
+          pl.name = (p.name||pl.name);
+          pl.ovr = U.clamp(parseInt(p.ovr||pl.ovr,10), 45, 99);
+          return pl;
+        });
+        team.roster = players;
+        applied++;
+      }
+
+      toast("Roster Import", `Applied ${applied} team rosters. Skipped ${skipped}.`, applied? "good":"warn");
+      await save(); render(); return;
+    }
+
+  }catch(e){
+    console.error(e);
+    toast("Runtime Error", e?.message || "Unknown error", "bad");
+  }
+}
+
+/* Click routing */
+document.addEventListener("click", (e)=>{
+  const bg = e.target?.id==="drawer" ? e.target : null;
+  if(bg && bg.classList.contains("drawerOverlay") && bg.classList.contains("open")){
+    if(e.target === bg) drawerClose();
+    return;
+  }
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  handle(el.dataset.act, el);
+});
+
+/* Boot */
+(async function boot(){
+  const loaded = await loadSave();
+  if(loaded) S = loaded;
+  render();
+})();
+</script>
+</body>
+</html>
