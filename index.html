@@ -1,0 +1,3368 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <title>College Basketball Dynasty Sim (Offline)</title>
+  <style>
+    :root{
+      --bg:#0a0f16; --text:#eaf2ff; --muted:#a8bbd6;
+      --line:#263a55;
+      --good:#4ee08a; --warn:#ffd166; --bad:#ff5d5d;
+      --accent:#63b3ff; --accent2:#b58cff; --accent3:#7CFFB2;
+      --shadow: 0 14px 34px rgba(0,0,0,.38);
+      --safeTop: env(safe-area-inset-top, 0px); --safeBot: env(safe-area-inset-bottom, 0px);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(99,179,255,.17), transparent 60%),
+        radial-gradient(900px 700px at 85% 0%, rgba(181,140,255,.13), transparent 55%),
+        radial-gradient(900px 800px at 40% 90%, rgba(124,255,178,.08), transparent 55%),
+        var(--bg);
+      color:var(--text);
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+      overflow-x:hidden;
+    }
+    html, body { overflow-x: hidden; }
+    main, .card, .list, .itemCard { max-width: 100%; }
+
+    header{
+      position:sticky; top:0; z-index:60;
+      background: linear-gradient(180deg, rgba(10,15,22,.96), rgba(10,15,22,.78));
+      backdrop-filter: blur(10px);
+      border-bottom:1px solid rgba(38,58,85,.65);
+      padding: calc(6px + var(--safeTop)) 10px 6px;
+    }
+    .topRow{display:flex; gap:10px; align-items:center; justify-content:space-between; max-width:1120px; margin:0 auto;}
+    .leftHdr{display:flex; align-items:center; gap:10px; min-width:0}
+    .brand{display:flex; flex-direction:column; gap:1px; min-width:0}
+    .brand .title{font-weight:950; letter-spacing:.4px; font-size:13px; display:flex; align-items:center; gap:8px; white-space:nowrap;}
+    .pill{
+      padding:2px 7px;
+      border:1px solid rgba(99,179,255,.40);
+      background: rgba(99,179,255,.12);
+      border-radius:999px;
+      font-size:10px; color:var(--accent); font-weight:900;
+    }
+    .sub{
+      color:var(--muted); font-size:11px; line-height:1.2;
+      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+      max-width: 64vw;
+    }
+    .topActions{display:flex; gap:8px; align-items:center; justify-content:flex-end; flex:0 0 auto;}
+
+    button{
+      border:1px solid rgba(38,58,85,.92);
+      background: linear-gradient(180deg, rgba(18,28,43,.97), rgba(15,22,32,.95));
+      color:var(--text);
+      border-radius:12px; padding:9px 10px;
+      font-weight:900; font-size:12px;
+      cursor:pointer; box-shadow: 0 8px 18px rgba(0,0,0,.16); user-select:none;
+      transition: transform .05s ease, border-color .15s ease, filter .15s ease;
+      touch-action: manipulation;
+      white-space:nowrap;
+    }
+    button:hover{ border-color: rgba(99,179,255,.65); }
+    button:active{ transform: translateY(1px); }
+    button:disabled{opacity:.45; cursor:not-allowed; filter:saturate(.6);}
+    .btnAccent{border-color: rgba(99,179,255,.68); background: linear-gradient(180deg, rgba(99,179,255,.22), rgba(15,22,32,.95));}
+    .btnGood{border-color: rgba(78,224,138,.58); background: linear-gradient(180deg, rgba(78,224,138,.18), rgba(15,22,32,.95));}
+    .btnDanger{border-color: rgba(255,93,93,.58); background: linear-gradient(180deg, rgba(255,93,93,.18), rgba(15,22,32,.95));}
+    .btnWarn{border-color: rgba(255,209,102,.55); background: linear-gradient(180deg, rgba(255,209,102,.14), rgba(15,22,32,.95));}
+    .iconBtn{
+      width:40px; height:40px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:12px;
+    }
+
+    main{ max-width:1120px; margin:0 auto; padding:12px 12px calc(18px + var(--safeBot)); }
+    .grid{display:grid; grid-template-columns: 1.15fr .85fr; gap:12px;}
+    @media (max-width: 920px){.grid{grid-template-columns:1fr}}
+
+    .card{
+      background: linear-gradient(180deg, rgba(18,28,43,.92), rgba(12,18,26,.92));
+      border:1px solid rgba(38,58,85,.82);
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      padding:12px;
+    }
+    .card h2{margin:0 0 8px; font-size:14px; letter-spacing:.35px;}
+    .muted{color:var(--muted)}
+    .sep{height:1px; background:rgba(38,58,85,.75); margin:10px 0;}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+    .rowBetween{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+    .chip{
+      background: rgba(22,36,55,.92);
+      border:1px solid rgba(38,58,85,.82);
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px; font-weight:900;
+      display:inline-flex; gap:6px; align-items:center;
+    }
+    .chip .k{color:var(--muted); font-weight:950; font-size:11px; letter-spacing:.2px;}
+
+    input,select,textarea{
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(38,58,85,.92);
+      background: rgba(10,14,19,.78);
+      color:var(--text);
+      padding:10px;
+      outline:none;
+      font-size:13px;
+    }
+    label{font-size:12px; color:var(--muted); font-weight:950; display:block; margin:8px 0 6px;}
+    .hint{font-size:11px; color:var(--muted); margin-top:6px; line-height:1.28;}
+    .badge{
+      padding:3px 8px; border-radius:999px;
+      font-size:11px; font-weight:950;
+      border:1px solid rgba(38,58,85,.88);
+      background: rgba(22,36,55,.75);
+      display:inline-flex; align-items:center; gap:6px; white-space:nowrap;
+    }
+    .bGood{border-color: rgba(78,224,138,.52); color: rgba(170,255,212,1); background: rgba(78,224,138,.11);}
+    .bBad{border-color: rgba(255,93,93,.52); color: rgba(255,182,182,1); background: rgba(255,93,93,.10);}
+    .bWarn{border-color: rgba(255,209,102,.52); color: rgba(255,241,192,1); background: rgba(255,209,102,.12);}
+    .bAcc{border-color: rgba(99,179,255,.62); color: rgba(200,230,255,1); background: rgba(99,179,255,.12);}
+    .bAcc2{border-color: rgba(181,140,255,.62); color: rgba(230,212,255,1); background: rgba(181,140,255,.12);}
+
+    .progress{height:10px; border-radius:999px; border:1px solid rgba(38,58,85,.88); background: rgba(10,14,19,.82); overflow:hidden;}
+    .bar{height:100%; width:0%; background: linear-gradient(90deg, rgba(99,179,255,.95), rgba(181,140,255,.95));}
+
+    .toasts{position:fixed; top: calc(52px + var(--safeTop)); right: 10px; z-index: 90; display:flex; flex-direction:column; gap:8px; max-width: 92vw; pointer-events:none;}
+    .toast{pointer-events:none; background: rgba(18,28,43,.92); border:1px solid rgba(38,58,85,.92); border-left:5px solid rgba(99,179,255,.85); border-radius: 12px; padding: 10px 12px; box-shadow: var(--shadow); font-size: 12px; line-height: 1.25; max-width: 440px;}
+    .toast.good{border-left-color: rgba(78,224,138,.92);}
+    .toast.bad{border-left-color: rgba(255,93,93,.92);}
+    .toast.warn{border-left-color: rgba(255,209,102,.92);}
+    .toast .t{font-weight:950; margin-bottom:2px;}
+    .toast .s{color:var(--muted);}
+
+    .twoCol{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    @media (max-width: 640px){ .twoCol{grid-template-columns:1fr;} .sub{max-width:56vw} }
+    .mini{font-size:11px}
+
+    .overlay{
+      position:fixed; inset:0; z-index:140;
+      background: rgba(0,0,0,.58);
+      backdrop-filter: blur(6px);
+      display:flex; align-items:center; justify-content:center;
+      padding: 14px;
+    }
+    .modal{
+      width:min(840px, 96vw);
+      border-radius: 18px;
+      border:1px solid rgba(38,58,85,.92);
+      box-shadow: 0 20px 80px rgba(0,0,0,.55);
+      background:
+        radial-gradient(900px 300px at 10% 0%, rgba(99,179,255,.22), transparent 55%),
+        radial-gradient(900px 300px at 90% 0%, rgba(181,140,255,.18), transparent 55%),
+        linear-gradient(180deg, rgba(18,28,43,.96), rgba(12,18,26,.96));
+      padding: 14px;
+      max-height: calc(92vh - var(--safeTop) - var(--safeBot));
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .hero{
+      border-radius: 14px;
+      border:1px solid rgba(99,179,255,.42);
+      background: linear-gradient(90deg, rgba(99,179,255,.20), rgba(181,140,255,.18));
+      padding: 12px;
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+    }
+    .hero .big{font-size: 15px; font-weight: 1000; letter-spacing:.2px; line-height:1.15;}
+    .hero .subt{font-size: 12px; font-weight: 950; color: rgba(255,241,192,1);}
+    .hero .logo{font-size: 28px; filter: drop-shadow(0 10px 20px rgba(0,0,0,.35));}
+
+    .drawerOverlay{
+      position:fixed; inset:0; z-index:120;
+      background: rgba(0,0,0,.42);
+      backdrop-filter: blur(6px);
+      display:none;
+    }
+    .drawerOverlay.open{display:block;}
+    .drawer{
+      position:fixed; top:0; left:0;
+      height:100%;
+      width:min(340px, 90vw);
+      padding: calc(10px + var(--safeTop)) 12px 12px;
+      background: linear-gradient(180deg, rgba(18,28,43,.98), rgba(12,18,26,.98));
+      border-right:1px solid rgba(38,58,85,.82);
+      box-shadow: 24px 0 80px rgba(0,0,0,.55);
+      transform: translateX(-105%);
+      transition: transform .18s ease;
+      display:flex; flex-direction:column; gap:10px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .drawerOverlay.open .drawer{transform: translateX(0);}
+    .drawerHdr{display:flex; align-items:center; justify-content:space-between; gap:10px;}
+    .drawerTitle{font-weight:1000; letter-spacing:.3px;}
+    .navList{display:flex; flex-direction:column; gap:8px; margin-top:6px;}
+    .navItem{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-radius:14px;
+      border:1px solid rgba(38,58,85,.86);
+      background: rgba(18,28,43,.62);
+      color:var(--muted);
+      cursor:pointer; user-select:none; touch-action: manipulation;
+    }
+    .navItem .l{display:flex; align-items:center; gap:10px; font-weight:950; color:inherit;}
+    .navItem.active{color:var(--text); border-color: rgba(99,179,255,.68); background: rgba(99,179,255,.12);}
+
+    @media (max-width: 520px){
+      .hideOnPhone{display:none !important;}
+      .sub{max-width:56vw}
+    }
+
+    .list{display:flex; flex-direction:column; gap:10px;}
+    .itemCard{
+      border-radius: 14px;
+      border: 1px solid rgba(38,58,85,.82);
+      background: linear-gradient(180deg, rgba(18,28,43,.82), rgba(12,18,26,.82));
+      padding: 10px;
+    }
+    .itemTop{
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .itemTitle{
+      font-weight: 1000;
+      line-height: 1.15;
+      font-size: 13px;
+    }
+    .itemMeta{
+      margin-top:4px;
+      display:flex; flex-wrap:wrap; gap:6px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .actionLine{
+      margin-top:10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+    }
+
+    /* Bracket */
+    .brGrid{display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;}
+    @media (max-width: 920px){ .brGrid{grid-template-columns:1fr 1fr} }
+    @media (max-width: 560px){ .brGrid{grid-template-columns:1fr} }
+    .regionCard{border-radius:14px; border:1px solid rgba(38,58,85,.82); background: rgba(18,28,43,.58); padding:10px;}
+    .match{
+      border-radius:12px; border:1px solid rgba(38,58,85,.72);
+      background: rgba(12,18,26,.55);
+      padding:8px; margin-top:8px;
+    }
+    .teamLine{display:flex; justify-content:space-between; gap:10px; font-size:12px; font-weight:900;}
+    .teamLine .seed{color:rgba(255,241,192,1); font-weight:1000;}
+    .teamLine.you{outline:1px solid rgba(78,224,138,.55); border-radius:10px; padding:4px 6px; background: rgba(78,224,138,.06);}
+  </style>
+</head>
+<body>
+<header>
+  <div class="topRow">
+    <div class="leftHdr">
+      <button class="iconBtn" data-act="drawer_open" aria-label="Menu">☰</button>
+      <div class="brand">
+        <div class="title">🏀 College Basketball Dynasty <span class="pill">OFFLINE</span></div>
+        <div class="sub" id="subLine">Loading…</div>
+      </div>
+    </div>
+
+    <div class="topActions">
+      <button class="btnAccent" data-act="advance">Advance</button>
+      <button class="hideOnPhone" data-act="sim">Sim</button>
+      <button class="hideOnPhone btnGood" data-act="save">Save</button>
+    </div>
+  </div>
+</header>
+
+<div class="toasts" id="toasts"></div>
+
+<div class="drawerOverlay" id="drawer">
+  <div class="drawer" role="dialog" aria-modal="true" aria-label="Navigation menu">
+    <div class="drawerHdr">
+      <div class="drawerTitle">Menu</div>
+      <button class="iconBtn" data-act="drawer_close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="card" style="padding:10px; background:rgba(18,28,43,.55)">
+      <div class="row" style="gap:8px">
+        <button class="btnAccent" style="flex:1" data-act="advance">Advance</button>
+        <button style="flex:1" data-act="sim">Sim</button>
+      </div>
+      <div class="row" style="gap:8px; margin-top:8px">
+        <button class="btnGood" style="flex:1" data-act="save">Save</button>
+        <button class="btnDanger" style="flex:1" data-act="hard_reset">Reset</button>
+      </div>
+      <div class="hint">All tabs live here. No bottom bar.</div>
+    </div>
+
+    <div class="navList" id="navList"></div>
+  </div>
+</div>
+
+<main id="app"></main>
+<div id="overlayRoot"></div>
+
+<script>
+/* ==========================================================
+   COLLEGE BASKETBALL DYNASTY (SINGLE FILE)
+   - 160 real-ish programs across real conferences (curated set)
+   - Start career: Bottom 25 prestige only
+   - 15 weeks / 30 games (2 per week)
+   - Conference tournaments -> NCAA 68-team (First Four)
+   - Bracket View tab
+   - Hybrid skill trees (Recruiter/Developer/Tactician)
+   - Realistic job carousel (no rocket jumps)
+   - Forced retirement at 35 seasons + HOF rules (hard thresholds)
+   - Popups: selection, milestones, round scores, final tourney recap
+   - FIXED: postseason state machine cannot loop backwards
+========================================================== */
+
+const U = {
+  clamp:(v,a,b)=>Math.max(a,Math.min(b,v)),
+  rint:(a,b)=>Math.floor(a + Math.random()*(b-a+1)),
+  pick:(arr)=>arr[Math.floor(Math.random()*arr.length)],
+  uuid:()=> (crypto?.randomUUID ? crypto.randomUUID() : ("id"+Math.random().toString(16).slice(2)+Date.now())),
+  deepCopy:(o)=>JSON.parse(JSON.stringify(o)),
+  safe:(s)=> (s??"").toString().replace(/[<>&"]/g, m=>({ "<":"&lt;", ">":"&gt;", "&":"&amp;", "\"":"&quot;" }[m])),
+  fmt:(n)=> (n??0).toLocaleString(),
+};
+
+function toast(title, msg, type=""){
+  const wrap = document.getElementById("toasts");
+  const el = document.createElement("div");
+  el.className = "toast " + (type||"");
+  el.innerHTML = `<div class="t">${U.safe(title)}</div><div class="s">${U.safe(msg)}</div>`;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity="0"; el.style.transform="translateY(-6px)"; }, 3400);
+  setTimeout(()=>{ el.remove(); }, 4100);
+}
+
+/* ---------- IndexedDB KV ---------- */
+const STORE = (() => {
+  const DB_NAME = "cbb_dynasty_db_offline_v1";
+  const STORE_NAME = "kv";
+  let dbPromise = null;
+
+  function openDB(){
+    if(dbPromise) return dbPromise;
+    dbPromise = new Promise((resolve)=>{
+      if(!("indexedDB" in window)) return resolve(null);
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if(!db.objectStoreNames.contains(STORE_NAME)) db.createObjectStore(STORE_NAME);
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    });
+    return dbPromise;
+  }
+
+  async function idbGet(key){
+    const db = await openDB();
+    if(!db) return null;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.get(key);
+      rq.onsuccess = () => resolve(rq.result ?? null);
+      rq.onerror = () => resolve(null);
+    });
+  }
+
+  async function idbSet(key, val){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.put(val, key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+
+  async function idbDel(key){
+    const db = await openDB();
+    if(!db) return false;
+    return new Promise((resolve)=>{
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const st = tx.objectStore(STORE_NAME);
+      const rq = st.delete(key);
+      rq.onsuccess = () => resolve(true);
+      rq.onerror = () => resolve(false);
+    });
+  }
+
+  return {
+    async get(key){ return await idbGet(key); },
+    async set(key,val){ return await idbSet(key,val); },
+    async del(key){ return await idbDel(key); },
+  };
+})();
+
+/* ---------- Game Config ---------- */
+const GAME = {
+  SAVE_KEY: "CBB_SAVE_offline_v1",
+  ROSTER_MAX: 13,
+  CLASS_SLOTS: 3,             // your ask
+  REG_WEEKS: 15,
+  GAMES_PER_WEEK: 2,
+  REG_GAMES: 30,
+  CONF_TOURNEY_WEEK: 16,
+  SELECTION_WEEK: 17,
+  NCAA_ROUNDS: [
+    "First Four",
+    "Round of 64",
+    "Round of 32",
+    "Sweet 16",
+    "Elite 8",
+    "Final Four",
+    "National Championship"
+  ],
+  NCAA_TEAMS: 68,
+  POS: ["PG","SG","SF","PF","C"],
+  STATES: ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"],
+};
+
+function weekName(){
+  if(!S) return "—";
+  if(S.phase==="setup") return "Setup";
+  if(S.phase==="season"){
+    if(S.weekIndex===0) return "Preseason";
+    if(S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS) return `Week ${S.weekIndex} (2 games)`;
+    return "Season";
+  }
+  if(S.phase==="conf_tourney") return "Conference Tournaments";
+  if(S.phase==="selection") return "Selection Sunday";
+  if(S.phase==="ncaa") return `NCAA — ${GAME.NCAA_ROUNDS[S.post.ncaa.roundIdx]}`;
+  if(S.phase==="offseason"){
+    if(S.weekIndex===0) return "Offseason Wk1 (Jobs+Portal)";
+    if(S.weekIndex===1) return "Offseason Wk2 (Portal)";
+    if(S.weekIndex===2) return "Offseason Wk3 (Recruiting)";
+    if(S.weekIndex===3) return "Offseason Wk4 (Signing/Progression)";
+    return "Offseason";
+  }
+  if(S.phase==="retired") return "Retired";
+  return "—";
+}
+
+/* ---------- Names ---------- */
+const NAME = {
+  first:["Jaden","Marcus","DeAndre","Tyrese","Cameron","Ethan","Jaylen","Noah","Kobe","Miles","Dylan","Malik","Zion","Jordan","Caleb","Tre","Bryce","Isaiah","Damian","Aiden","Rashad","Micah","Logan","Colin","Xavier","Julian","Elijah","Gavin","Brandon","Terrence","Carter","Adrian","Nate","Chris","Kevin","Antonio","Kyler","Mason","Grant","Hunter","AJ","RJ","TJ","DJ"],
+  last:["Williams","Johnson","Brown","Davis","Miller","Wilson","Moore","Anderson","Thomas","Jackson","White","Harris","Martin","Thompson","Garcia","Martinez","Robinson","Clark","Lewis","Lee","Walker","Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson","Hill","Campbell","Mitchell","Carter","Roberts","Turner","Phillips","Parker","Evans","Edwards","Collins","Stewart","Sanchez","Morris","Rogers","Reed","Cook"],
+  coachFirst:["Mike","Dan","Chris","Ryan","Eric","Tony","Steve","James","Matt","Brad","Kevin","Derek","Nick","Robert","Sam","Rich","Jeff","Grant","Kyle","Todd","Mark","Andre","Jason","Pat","Bryan","John","Zach","Will"],
+  coachLast:["Henderson","Murray","Donovan","Bennett","Holt","Pearson","Crawford","Walters","Kelley","Fisher","Browning","Hughes","McCarthy","Franklin","Rivers","Hawkins","Montgomery","Owens","West","Snyder","Burke","Caldwell","Stephens","Fowler","Carver","Harrington","Simmons","Harmon","Kerrigan"]
+};
+function genPlayerName(){ return U.pick(NAME.first)+" "+U.pick(NAME.last); }
+function genCoachName(){ return U.pick(NAME.coachFirst)+" "+U.pick(NAME.coachLast); }
+
+/* ---------- Teamset (160 curated programs across real conferences) ---------- */
+/* Note: This is a curated 160, not full D1. Real conferences + real school names. */
+const TEAMSET = {
+  version: 1,
+  conferences: [
+    {name:"ACC", base:86, teams:["Duke","North Carolina","Virginia","Virginia Tech","NC State","Clemson","Miami","Florida State","Louisville","Syracuse","Pittsburgh","Wake Forest","Georgia Tech","Boston College","Notre Dame","SMU"]},
+    {name:"Big Ten", base:88, teams:["Purdue","Indiana","Illinois","Michigan","Michigan State","Ohio State","Iowa","Wisconsin","Minnesota","Nebraska","Northwestern","Maryland","Rutgers","Penn State","UCLA","USC","Oregon","Washington"]},
+    {name:"Big 12", base:88, teams:["Kansas","Baylor","Houston","Texas Tech","TCU","Oklahoma State","Iowa State","Kansas State","Cincinnati","UCF","West Virginia","BYU","Utah","Arizona","Arizona State","Colorado"]},
+    {name:"SEC", base:86, teams:["Kentucky","Tennessee","Auburn","Alabama","Arkansas","Florida","Georgia","LSU","Mississippi State","Ole Miss","Missouri","Oklahoma","Texas","Texas A&M","South Carolina","Vanderbilt"]},
+    {name:"Big East", base:84, teams:["UConn","Villanova","Marquette","Creighton","St. John's","Seton Hall","Providence","Xavier","Georgetown","DePaul","Butler"]},
+    {name:"American", base:76, teams:["Memphis","Tulane","Wichita State","Temple","SMU (AAC)","South Florida","East Carolina","UTSA","UAB","FAU","North Texas","Charlotte"]},
+    {name:"Mountain West", base:78, teams:["San Diego State","Boise State","Nevada","New Mexico","Utah State","Colorado State","UNLV","Fresno State","Wyoming","San Jose State","Air Force"]},
+    {name:"WCC", base:75, teams:["Gonzaga","Saint Mary's","San Francisco","Santa Clara","Loyola Marymount","Pepperdine","Portland"]},
+    {name:"A-10", base:74, teams:["Dayton","VCU","Saint Louis","Richmond","George Mason","Duquesne","St. Bonaventure","Davidson","Rhode Island","UMass","La Salle","Fordham"]},
+    {name:"MVC", base:72, teams:["Drake","Bradley","Indiana State","Northern Iowa","Illinois State","Belmont","Murray State","UIC","Missouri State","Southern Illinois"]},
+    {name:"MAC", base:66, teams:["Akron","Kent State","Toledo","Ohio","Buffalo","Bowling Green","Ball State","Miami (OH)","Western Michigan","Central Michigan","Eastern Michigan","Northern Illinois"]},
+    {name:"C-USA", base:66, teams:["Liberty","Middle Tennessee","Western Kentucky","Louisiana Tech","FIU","UTEP","New Mexico State","Jacksonville State","Sam Houston","Kennesaw State"]},
+    {name:"Sun Belt", base:66, teams:["James Madison","Appalachian State","Marshall","Louisiana","South Alabama","Troy","Texas State","Arkansas State","Georgia State","Georgia Southern","Coastal Carolina","Southern Miss","Old Dominion"]},
+    {name:"SoCon", base:64, teams:["Chattanooga","Furman","Samford","UNC Greensboro","Wofford","East Tennessee State","Western Carolina"]},
+    {name:"CAA", base:64, teams:["College of Charleston","UNC Wilmington","Towson","Hofstra","Drexel","Delaware","Northeastern","William & Mary"]},
+    {name:"Ivy League", base:66, teams:["Yale","Princeton","Harvard","Cornell","Brown","Penn","Dartmouth","Columbia"]},
+    {name:"MAAC", base:62, teams:["Iona","Marist","Siena","Rider","Manhattan","Niagara","Fairfield","Quinnipiac","Saint Peter's","Canisius"]},
+    {name:"Summit", base:62, teams:["South Dakota State","North Dakota State","Oral Roberts","Denver","North Dakota","South Dakota","St. Thomas","Kansas City"]},
+  ]
+};
+
+/* Ensure exactly 160 teams (curated list should be 160; if not, we pad with generic “Independent” programs) */
+function flattenTeamset(teamset){
+  const out=[];
+  for(const c of teamset.conferences){
+    for(const nm of c.teams) out.push({conf:c.name, base:c.base, name:nm});
+  }
+  if(out.length<160){
+    const need=160-out.length;
+    for(let i=1;i<=need;i++) out.push({conf:"Independents", base:60, name:`Independent ${i}`});
+  } else if(out.length>160){
+    out.length=160;
+  }
+  return out;
+}
+
+/* ---------- Utility hash/noise ---------- */
+function hash32(str){
+  let h = 2166136261>>>0;
+  for(let i=0;i<str.length;i++){ h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h>>>0;
+}
+function noiseRange(key, min, max){
+  const h = hash32(key);
+  const span = (max-min+1);
+  return min + (h % span);
+}
+
+/* ---------- Settings multipliers ---------- */
+function xpMult(){ return U.clamp(parseFloat(S?.settings?.xpSpeed ?? 1)||1, 0.5, 4); }
+function spRate(){ return U.clamp(parseFloat(S?.settings?.spRate ?? 1)||1, 0.5, 4); }
+function diff(){ return U.clamp(parseFloat(S?.settings?.difficulty ?? 1) || 1, 0.80, 1.35); }
+
+/* ---------- Hybrid skill tree ---------- */
+const ARCH = ["Recruiter","Developer","Tactician"];
+const SKILL_NODES = {
+  Recruiter: [
+    {key:"rec_close", name:"Closer", tier:2, max:3, desc:"+Late commit odds"},
+    {key:"rec_visits", name:"Visit King", tier:2, max:3, desc:"+Visit impact"},
+    {key:"rec_sway", name:"Sway Artist", tier:3, max:2, desc:"+Sway success odds"},
+    {key:"rec_elite", name:"Bluechip Hunter", tier:4, max:2, desc:"+4–5★ battles"},
+  ],
+  Developer: [
+    {key:"dev_growth", name:"Player Growth", tier:1, max:3, desc:"+Offseason progression"},
+    {key:"dev_lab", name:"Skill Lab", tier:3, max:2, desc:"+Big development burst"},
+  ],
+  Tactician: [
+    {key:"tac_off", name:"Offensive System", tier:1, max:3, desc:"+Scoring efficiency"},
+    {key:"tac_def", name:"Defensive System", tier:1, max:3, desc:"+Stops/defense"},
+    {key:"tac_close", name:"Close Game Killer", tier:2, max:3, desc:"+Win tight games"},
+  ],
+};
+function makeSkillState(){
+  const out = {};
+  for(const a of ARCH){
+    out[a] = {};
+    for(const n of (SKILL_NODES[a]||[])){
+      out[a][n.key] = {lvl:0, max:n.max};
+    }
+  }
+  return out;
+}
+function nodeCost(arch, key, lvl){
+  const node = (SKILL_NODES[arch]||[]).find(x=>x.key===key);
+  if(!node) return 1;
+  const base = node.tier<=2 ? 1 : (node.tier===3 ? 2 : 3);
+  return base + lvl;
+}
+function sumArchLevels(coach, arch){
+  const s = coach.skillsTree?.[arch] || {};
+  return Object.values(s).reduce((a,x)=>a+(x.lvl||0),0);
+}
+
+/* ---------- HOF rules (hard thresholds) ---------- */
+const HOF_RULES = [
+  { id:"titles_3", label:"Dynasty (3 Titles)", test:(c)=> (c.career?.titles||0) >= 3 },
+  { id:"titles_2", label:"Champion (2 Titles)", test:(c)=> (c.career?.titles||0) >= 2 },
+  { id:"wins_800", label:"Volume (800 Wins)", test:(c)=> (c.career?.wins||0) >= 800 },
+  { id:"elite", label:"Elite (650 Wins + 25 Tourney Wins)", test:(c)=> (c.career?.wins||0) >= 650 && (c.career?.tourneyWins||0) >= 25 },
+  { id:"final_four_machine", label:"Final Four Machine (6 FF + 1 Title)", test:(c)=> (c.career?.finalFours||0) >= 6 && (c.career?.titles||0) >= 1 },
+];
+function hofEligible(c){ return HOF_RULES.some(r => r.test(c)); }
+function hofReasons(c){ return HOF_RULES.filter(r => r.test(c)).map(r => r.label); }
+
+/* ---------- XP/SP ---------- */
+function addXP(coach, amt){
+  if(!coach) return;
+  if(S?.settings?.infiniteSP){
+    coach.skillPoints = 999;
+    coach.xp = 0;
+    return;
+  }
+  coach.xp += Math.round(amt * xpMult());
+  while(coach.xp >= 100){
+    coach.xp -= 100;
+    coach.spCarry = (coach.spCarry||0) + spRate();
+    while(coach.spCarry >= 1){
+      coach.skillPoints += 1;
+      coach.spCarry -= 1;
+      toast("Skill Point", "+1 skill point earned.", "good");
+    }
+  }
+}
+function upgradeNode(coach, arch, key){
+  const node = (SKILL_NODES[arch]||[]).find(x=>x.key===key);
+  if(!node) return;
+  const st = coach.skillsTree[arch][key];
+  if(st.lvl>=st.max) return toast("Maxed","That perk is maxed.","bad");
+
+  if(S?.settings?.infiniteSP){
+    st.lvl++;
+    toast("Upgraded", `${node.name} → Lv ${st.lvl} (∞)`, "good");
+    return;
+  }
+
+  const cost = nodeCost(arch, key, st.lvl);
+  if(coach.skillPoints < cost) return toast("No Points", `Need ${cost} points.`, "bad");
+  coach.skillPoints -= cost;
+  st.lvl++;
+  toast("Upgraded", `${node.name} → Lv ${st.lvl}`, "good");
+}
+
+/* ---------- Coach ---------- */
+function makeCoach({name}){
+  return {
+    id: U.uuid(),
+    name,
+    role:"HC",
+    prestige: U.clamp(45 + U.rint(-8,+10), 20, 95),
+    rep:{ recruiting: U.rint(35,75), dev: U.rint(35,75), tactics: U.rint(35,75) },
+    xp: 0,
+    spCarry: 0,
+    skillPoints: 3,
+    skillsTree: makeSkillState(),
+    career:{ wins:0, losses:0, titles:0, tourneyWins:0, finalFours:0 },
+    yearsCoached: 0,
+    retired:false,
+    hof:false,
+    retiredYear:0,
+    hofReasons:[],
+    legacy:0,
+  };
+}
+
+/* ---------- Players / Teams ---------- */
+function blankStats(){ return { gp:0, pts:0, reb:0, ast:0, stl:0, blk:0 }; }
+function ensureStats(p){
+  if(!p.seasonStats) p.seasonStats = blankStats();
+  if(!p.careerStats) p.careerStats = blankStats();
+}
+function makePlayer({pos,year,ovr,pot}){
+  return { id: U.uuid(), name: genPlayerName(), pos, year, ovr, pot, seasonStats: blankStats(), careerStats: blankStats() };
+}
+function teamAvgOVR(team){
+  return Math.round(team.roster.reduce((a,p)=>a+p.ovr,0)/Math.max(1,team.roster.length));
+}
+function computeNeeds(team){
+  const counts = {};
+  for(const p of team.roster) counts[p.pos] = (counts[p.pos]||0)+1;
+  const target = { PG:2, SG:3, SF:3, PF:3, C:2 };
+  team.needs = {};
+  for(const pos of GAME.POS) team.needs[pos] = Math.max(0, (target[pos]||0) - (counts[pos]||0));
+}
+function buildRoster(team){
+  // 13-man roster
+  const dist = ["PG","PG","SG","SG","SG","SF","SF","SF","PF","PF","PF","C","C"];
+  const years = ["SR","SR","JR","JR","SO","SO","FR","FR","FR","JR","SO","SR","FR"];
+  return dist.map((pos,i)=>{
+    const base = U.clamp(team.ovr + U.rint(-12,+10), 50, 95);
+    const ovr = U.clamp(base + U.rint(-8,+6), 45, 97);
+    const year = years[i] || U.pick(["FR","SO","JR","SR"]);
+    const pot = U.rint(0,10);
+    const p = makePlayer({pos,year,ovr,pot});
+    ensureStats(p);
+    return p;
+  });
+}
+
+/* ---------- League build (160 teams) ---------- */
+function buildLeague(teamset){
+  const flat = flattenTeamset(teamset);
+  const teams = flat.map((x)=>{
+    const base = x.base;
+    // Small deterministic school-specific bump so big brands stay big.
+    const sig = noiseRange(x.name, -6, +6);
+    const prestige = U.clamp(base + sig + U.rint(-6,+6), 35, 95);
+    const ovr = U.clamp(base + sig + U.rint(-7,+7), 35, 95);
+    const off = U.clamp(ovr + U.rint(-8,+8), 35, 97);
+    const def = U.clamp(ovr + U.rint(-8,+8), 35, 97);
+    const tempo = U.clamp(65 + U.rint(-10,+10) + Math.round((off-def)*0.25), 50, 85);
+
+    return {
+      id: U.uuid(),
+      name: x.name,
+      conf: x.conf,
+      prestige,
+      budget: U.clamp(45 + Math.round(prestige*0.6) + U.rint(-10,+10), 35, 98),
+      ovr,
+      off,
+      def,
+      tempo,
+      season:{ w:0,l:0, pf:0, pa:0, games:0, confW:0, confL:0 },
+      staff:{ HC:null, A1:null, A2:null },
+      roster:[],
+      needs:{},
+      recruiting:{ points:0, spent:0, offered:[], spentMap:{}, commits:[], classSlots: GAME.CLASS_SLOTS },
+      apRank: 999,
+      ncaaSeed: null,
+      ncaaRegion: null,
+      isAutoBid: false,
+    };
+  });
+
+  for(const t of teams){
+    t.roster = buildRoster(t);
+    t.staff.HC = makeCoach({name: genCoachName()});
+    t.staff.A1 = { id:U.uuid(), name: genCoachName(), rep:{recruiting:U.rint(35,75)} };
+    t.staff.A2 = { id:U.uuid(), name: genCoachName(), rep:{recruiting:U.rint(35,75)} };
+    computeNeeds(t);
+  }
+  return teams;
+}
+
+/* ---------- Polls ---------- */
+function teamPollScore(t){
+  const g = t.season.games||0;
+  const winPct = g ? (t.season.w/g) : 0;
+  const margin = g ? ((t.season.pf - t.season.pa)/g) : 0;
+  const sos = 0.20 * t.prestige + 0.15 * t.ovr; // proxy
+  return (winPct*100) + (margin*1.2) + (sos);
+}
+function computeAPPoll(){
+  const ranked = S.league.teams.slice().sort((a,b)=>teamPollScore(b)-teamPollScore(a));
+  ranked.forEach((t,i)=>{ t.apRank=i+1; });
+  return ranked.slice(0,25).map(t=>t.id);
+}
+function updatePolls(reason="weekly"){
+  S.polls ??= { apTop25:[], lastReason:"" };
+  S.polls.apTop25 = computeAPPoll();
+  S.polls.lastReason = reason;
+}
+
+/* ---------- Recruiting ---------- */
+const ACTIONS = {
+  soft: {label:"Soft", cost:40, baseEff:0.95},
+  hard: {label:"Hard", cost:85, baseEff:1.45},
+  sway: {label:"Sway", cost:70, baseEff:0.0},
+  visit:{label:"Visit", cost:120, baseEff:1.95},
+};
+const MOTIVES = ["brand","minutes","development","campus","nba","winning"];
+
+function maxStarsByPrestige(p){
+  if(p < 55) return 3;
+  if(p < 70) return 4;
+  return 5;
+}
+function makeRecruit(){
+  const ovr = U.clamp(U.rint(60,92) + (Math.random()<0.08?U.rint(3,6):0), 55, 97);
+  const stars = U.clamp(Math.round((ovr-55)/8), 1, 5);
+  const motives = U.deepCopy(MOTIVES).sort(()=>Math.random()-0.5).slice(0,3);
+  const openToAll = (stars>=4 ? (Math.random()<0.10) : (Math.random()<0.05));
+  return {
+    id: U.uuid(),
+    name: genPlayerName(),
+    pos: U.pick(GAME.POS),
+    state: U.pick(GAME.STATES),
+    stars, ovr, pot: U.rint(0,10),
+    motives,
+    openToAll,
+    stage:"open",
+    committedTo:null,
+    offers:[],
+    delta:{},
+    visitedBy:{},
+    visitScheduled:{},
+    swayLocked:false,
+  };
+}
+function buildRecruitPool(n){ return Array.from({length:n}, ()=>makeRecruit()); }
+function canRecruitByPrestige(team, r){
+  if(r.openToAll) return true;
+  return r.stars <= maxStarsByPrestige(team.prestige);
+}
+function baseInterest(r, team){
+  const need = (team.needs?.[r.pos]||0);
+  const needBoost = Math.min(16, need*5.0);
+  const jitter = noiseRange(r.id+"|"+team.id, -12, 12);
+  return U.clamp(team.prestige*0.55 + team.budget*0.20 + needBoost + jitter, 0, 100);
+}
+function interest(r, team){
+  const offerBonus = (r.offers?.includes(team.id) ? 7 : 0);
+  const d = r.delta?.[team.id] ?? 0;
+  return U.clamp(baseInterest(r, team) + offerBonus + d, 0, 100);
+}
+function rankTeams(r){
+  const arr = S.league.teams.map(t=>({id:t.id, val: interest(r, t)}));
+  arr.sort((a,b)=>b.val-a.val);
+  return arr;
+}
+function hasUserOffer(team, recruit){
+  return (team.recruiting.offered||[]).includes(recruit.id) || (recruit.offers||[]).includes(team.id);
+}
+function ensureUserOffer(team, recruit){
+  team.recruiting.offered ??= [];
+  recruit.offers ??= [];
+  if(!team.recruiting.offered.includes(recruit.id)) team.recruiting.offered.push(recruit.id);
+  if(!recruit.offers.includes(team.id)) recruit.offers.push(team.id);
+  if(recruit.offers.length>12) recruit.offers.length=12;
+}
+function projectedSlots(team){
+  const seniors = (team.roster||[]).filter(p=>p.year==="SR").length;
+  const projected = U.clamp(seniors, 0, 6); // basketball turnover
+  const commits = team.recruiting?.commits?.length ?? 0;
+  return Math.max(0, (projected + 1) - commits); // allow 1 flexibility
+}
+function canOfferRecruit(team){ return projectedSlots(team) > 0; }
+
+function offerRecruit(recruitId){
+  const team = getUserTeam();
+  const r = S.recruits.find(x=>x.id===recruitId);
+  if(!team || !r) return;
+
+  if(!canRecruitByPrestige(team, r)){
+    const cap = maxStarsByPrestige(team.prestige);
+    return toast("Prestige Cap", `Cap ${cap}★ unless OPEN.`, "bad");
+  }
+  if((team.recruiting.offered||[]).includes(recruitId)) return toast("Already Offered", "Offer already used.", "bad");
+  if(!canOfferRecruit(team)) return toast("No Projected Slots", "You have 0 projected slots left.", "bad");
+
+  ensureUserOffer(team, r);
+  toast("Offer Sent", `${r.stars}★ ${r.pos} ${r.name}`, "good");
+}
+
+function queueModal(obj){ S.ui.modalQueue.push(obj); }
+function clearModal(){ S.ui.modalQueue.shift(); }
+
+function applyRecruitAction(team, coach, r, actionKey){
+  const A = ACTIONS[actionKey];
+  if(!A) return;
+
+  if(!canRecruitByPrestige(team, r)){
+    const cap = maxStarsByPrestige(team.prestige);
+    return toast("Prestige Cap", `Cap ${cap}★ unless OPEN.`, "bad");
+  }
+
+  const offered = hasUserOffer(team, r);
+  if(actionKey!=="sway" && actionKey!=="visit" && !offered) return toast("Offer Needed","Offer first.","bad");
+  if(actionKey==="visit" && !offered) return toast("Offer Needed","Offer first.","bad");
+
+  const avail = team.recruiting.points - team.recruiting.spent;
+  if(A.cost > avail) return toast("No Points", `Only ${avail} left.`, "bad");
+
+  if(actionKey==="visit"){
+    if(r.visitedBy?.[team.id]) return toast("Visited","Already completed.","bad");
+    if(r.visitScheduled?.[team.id]!=null) return toast("Scheduled","Already scheduled.","bad");
+
+    const okWeeks = [];
+    if(S.phase==="season"){ for(let w=4; w<=GAME.REG_WEEKS; w++) okWeeks.push(w); }
+    else { okWeeks.push(2); } // offseason recruiting week
+    queueModal({ type:"scheduleVisit", recruitId:r.id, cost:A.cost, weeks: okWeeks });
+    return;
+  }
+
+  team.recruiting.spent += A.cost;
+
+  if(actionKey==="sway"){
+    if(r.swayLocked) return toast("Sway Locked", "Only one sway attempt.", "bad");
+    r.swayLocked = true;
+
+    const d = diff();
+    const odds = U.clamp((0.35 + sumArchLevels(coach,"Recruiter")*0.06 + U.rint(-6,6)/100) / d, 0.10, 0.80);
+    if(Math.random()<odds){
+      const bump = 10 + sumArchLevels(coach,"Recruiter")*2 + U.rint(0,6);
+      r.delta[team.id] = (r.delta[team.id]||0) + bump;
+      toast("Sway Success", `+${bump} interest`, "good");
+    } else {
+      const hit = 6 + U.rint(0,6);
+      r.delta[team.id] = (r.delta[team.id]||0) - hit;
+      toast("Sway Failed", `-${hit} interest`, "warn");
+    }
+    return;
+  }
+
+  const cur = interest(r, team);
+  const closer = coach.skillsTree.Recruiter.rec_close.lvl || 0;
+  const elite = coach.skillsTree.Recruiter.rec_elite.lvl || 0;
+  const recLevels = sumArchLevels(coach,"Recruiter");
+
+  const eff = ((0.040 + (coach.rep.recruiting*0.00022) + (recLevels*0.010) + (elite*0.010)) * A.baseEff) / diff();
+  let gain = Math.round(A.cost * eff * (1 - cur/135));
+  if(actionKey==="hard") gain += Math.round(closer*2);
+  gain += U.rint(-1,2);
+
+  r.delta[team.id] = (r.delta[team.id]||0) + gain;
+  toast(`${A.label}`, `+${gain} interest`, "good");
+}
+
+function applyScheduledVisitsNow(){
+  const team = getUserTeam();
+  if(!team) return;
+  const wk = (S.phase==="season" ? S.weekIndex : S.weekIndex); // offseason uses weekIndex 0..3
+  const coach = S.userCoach;
+  const visitKing = coach.skillsTree.Recruiter.rec_visits.lvl || 0;
+
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+    const sched = r.visitScheduled?.[team.id];
+    if(sched == null) continue;
+    if(sched !== wk) continue;
+
+    const cur = interest(r, team);
+    const eff = ((0.044 + coach.rep.recruiting*0.00022 + sumArchLevels(coach,"Recruiter")*0.010 + visitKing*0.012)
+      * ACTIONS.visit.baseEff) / diff();
+
+    const gain = Math.round(ACTIONS.visit.cost * eff * (1 - cur/135)) + U.rint(-1,2);
+    r.delta[team.id] = (r.delta[team.id]||0) + gain;
+
+    r.visitedBy[team.id] = true;
+    delete r.visitScheduled[team.id];
+    toast("Visit Completed", `${r.name} (+${gain})`, "good");
+  }
+}
+
+function weeklyRecruitingPoints(team){
+  const hc = team.staff?.HC;
+  const a1 = team.staff?.A1, a2 = team.staff?.A2;
+  const rep = ((hc?.rep?.recruiting??55) + (a1?.rep?.recruiting??55) + (a2?.rep?.recruiting??55))/3;
+  return 260 + Math.round(team.budget*3.8) + Math.round(rep*1.8);
+}
+function refreshRecruitingBudgets(){
+  for(const t of S.league.teams){
+    t.recruiting.points = weeklyRecruitingPoints(t);
+    t.recruiting.spent = 0;
+    t.recruiting.spentMap = {};
+  }
+}
+function aiRecruitingTick(){
+  const open = S.recruits.filter(r=>r.stage==="open");
+  for(const t of S.league.teams){
+    computeNeeds(t);
+    const cap = maxStarsByPrestige(t.prestige);
+    const candidates = open
+      .filter(r => r.openToAll || r.stars <= cap)
+      .slice().sort(()=>Math.random()-0.5).slice(0, 90)
+      .sort((a,b)=>{
+        const na=(t.needs?.[a.pos]||0), nb=(t.needs?.[b.pos]||0);
+        if(nb!==na) return nb-na;
+        if(b.stars!==a.stars) return b.stars-a.stars;
+        return b.ovr-a.ovr;
+      }).slice(0, 10);
+
+    for(const r of candidates){
+      if(!r.offers.includes(t.id) && Math.random()<0.45){
+        r.offers.push(t.id);
+        if(r.offers.length>12) r.offers.length=12;
+      }
+      const avail = t.recruiting.points - t.recruiting.spent;
+      if(avail<=0) break;
+      const spend = Math.min(avail, Math.random()<0.45 ? U.rint(60,120) : U.rint(40,95));
+      t.recruiting.spent += spend;
+
+      const cur = interest(r, t);
+      const rep = (t.staff.HC.rep.recruiting);
+      const eff = (0.040 + rep*0.00022) * (Math.random()<0.45?1.18:0.92);
+      const gain = Math.round(spend * eff * (1 - cur/140)) + U.rint(-2,3);
+      r.delta[t.id] = (r.delta[t.id]||0) + gain;
+    }
+  }
+  applyScheduledVisitsNow();
+}
+
+function resolveCommitments(){
+  for(const r of S.recruits){
+    if(r.stage!=="open") continue;
+
+    const ranked = rankTeams(r);
+    const leaderId = ranked[0].id;
+    const leaderTeam = getTeam(leaderId);
+    const leaderVal = ranked[0].val;
+    if(!leaderTeam) continue;
+
+    if(!canRecruitByPrestige(leaderTeam, r)) continue;
+    const hasOffer = r.offers.includes(leaderId);
+    const room = (leaderTeam.recruiting.commits.length < leaderTeam.recruiting.classSlots);
+    if(!hasOffer || !room) continue;
+
+    const d = diff();
+    let p=0;
+
+    // basketball: commits mostly late season + offseason recruiting week
+    if(S.phase==="season"){
+      const wk = S.weekIndex;
+      const late = wk>=10;
+      if(leaderVal>=72) p = 0.05 + (leaderVal-70)*0.005;
+      if(late && leaderVal>=66) p = 0.12 + (leaderVal-66)*0.006;
+    } else if(S.phase==="offseason"){
+      // offseason recruiting week (wk2)
+      if(S.weekIndex===2 && leaderVal>=60) p = 0.22 + (leaderVal-60)*0.007;
+    }
+
+    if(leaderId===S.userTeamId){
+      const closer = S.userCoach.skillsTree.Recruiter.rec_close.lvl || 0;
+      p *= (1 + closer*0.10);
+      p *= 1.05;
+      p /= d;
+    }
+
+    if(Math.random()<U.clamp(p,0,0.60)){
+      r.stage="committed";
+      r.committedTo = leaderId;
+      leaderTeam.recruiting.commits.push(r.id);
+
+      if(leaderId===S.userTeamId){
+        toast("Commitment!", `${r.stars}★ ${r.pos} ${r.name}`, "good");
+        queueModal({ type:"commit", title:"COMMITMENT!", teamName: getUserTeam().name, recruit:{...r} });
+      }
+    }
+  }
+}
+
+function signAndProgress(){
+  const signedByTeam = new Map();
+  for(const r of S.recruits){
+    if(r.stage==="committed" && r.committedTo){
+      r.stage="signed";
+      if(!signedByTeam.has(r.committedTo)) signedByTeam.set(r.committedTo, []);
+      signedByTeam.get(r.committedTo).push(r);
+    }
+  }
+
+  for(const t of S.league.teams){
+    // graduate seniors
+    t.roster = (t.roster||[]).filter(p=>p.year!=="SR");
+
+    // advance class years
+    for(const p of t.roster){
+      if(p.year==="FR") p.year="SO";
+      else if(p.year==="SO") p.year="JR";
+      else if(p.year==="JR") p.year="SR";
+      ensureStats(p);
+      p.seasonStats = blankStats();
+    }
+
+    // development
+    const hc = t.staff.HC;
+    const devBase = 1 + U.rint(0,2);
+    const devPerk = (hc.skillsTree.Developer.dev_growth.lvl||0)*0.8 + (hc.skillsTree.Developer.dev_lab.lvl||0)*1.2;
+    for(const p of t.roster){
+      const grow = devBase + Math.round(devPerk*0.6) + U.rint(0,1);
+      p.ovr = U.clamp(p.ovr + grow, 45, 99);
+    }
+
+    // sign recruits (cap class slots already)
+    const signed = signedByTeam.get(t.id) || [];
+    for(const r of signed){
+      const np = makePlayer({
+        pos: r.pos,
+        year: "FR",
+        ovr: U.clamp(r.ovr + U.rint(-3,+3), 45, 97),
+        pot: r.pot
+      });
+      np.name = r.name;
+      ensureStats(np);
+      t.roster.push(np);
+    }
+
+    // enforce 13-man roster (cut lowest ovr)
+    if(t.roster.length > GAME.ROSTER_MAX){
+      t.roster.sort((a,b)=>b.ovr-a.ovr);
+      t.roster = t.roster.slice(0, GAME.ROSTER_MAX);
+    }
+
+    computeNeeds(t);
+
+    // reset recruiting
+    t.recruiting.offered=[];
+    t.recruiting.spentMap={};
+    t.recruiting.commits=[];
+    t.recruiting.classSlots=GAME.CLASS_SLOTS;
+    t.recruiting.spent=0;
+  }
+}
+
+/* ---------- Sim tuning (Option B upsets: realistic-ish) ---------- */
+function tacticsBoost(team){
+  const hc = team.staff?.HC;
+  const off = hc?.skillsTree?.Tactician?.tac_off?.lvl||0;
+  const def = hc?.skillsTree?.Tactician?.tac_def?.lvl||0;
+  const close = hc?.skillsTree?.Tactician?.tac_close?.lvl||0;
+  return {off, def, close};
+}
+// Regular season rng; scales with difficulty slightly (harder -> a bit more chaos)
+function randRangeSeason(){ return Math.round(8 * diff()); }
+// Tournament rng tighter
+function randRangeTourney(){ return Math.round(5 * diff()); }
+
+function simBasketballGame(teamH, teamA, isNeutral=false, isTourney=false){
+  const hb = tacticsBoost(teamH), ab = tacticsBoost(teamA);
+  const homeAdv = isNeutral ? 0 : 2.2;
+  const rr = isTourney ? randRangeTourney() : randRangeSeason();
+
+  const hRoster = teamAvgOVR(teamH);
+  const aRoster = teamAvgOVR(teamA);
+
+  // efficiency-ish
+  const hOff = teamH.off + hb.off*2 + hRoster*0.30;
+  const hDef = teamH.def + hb.def*2 + hRoster*0.30;
+  const aOff = teamA.off + ab.off*2 + aRoster*0.30;
+  const aDef = teamA.def + ab.def*2 + aRoster*0.30;
+
+  const tempo = U.clamp(Math.round((teamH.tempo + teamA.tempo)/2), 50, 85);
+  const basePts = 62 + Math.round((tempo-65)*0.55); // typical scores
+
+  let expH = basePts + (hOff - aDef)*0.22 + homeAdv + U.rint(-rr,+rr);
+  let expA = basePts + (aOff - hDef)*0.22 + U.rint(-rr,+rr);
+
+  // close-game perk
+  if(Math.abs(expH-expA) <= 4 && hb.close>0) expH += (hb.close*0.9);
+  if(Math.abs(expA-expH) <= 4 && ab.close>0) expA += (ab.close*0.9);
+
+  expH = U.clamp(Math.round(expH), 45, 98);
+  expA = U.clamp(Math.round(expA), 45, 98);
+
+  if(expH===expA){
+    expH += U.rint(1,4);
+  }
+  return {h:expH, a:expA, winnerId: (expH>expA?teamH.id:teamA.id)};
+}
+
+function applyResult(teamH, teamA, h, a, confGame){
+  teamH.season.games++; teamA.season.games++;
+  teamH.season.pf += h; teamH.season.pa += a;
+  teamA.season.pf += a; teamA.season.pa += h;
+
+  if(h>a){
+    teamH.season.w++; teamA.season.l++;
+    if(confGame){ teamH.season.confW++; teamA.season.confL++; }
+    teamH.staff.HC.career.wins++; teamA.staff.HC.career.losses++;
+  } else {
+    teamA.season.w++; teamH.season.l++;
+    if(confGame){ teamA.season.confW++; teamH.season.confL++; }
+    teamA.staff.HC.career.wins++; teamH.staff.HC.career.losses++;
+  }
+}
+
+/* ---------- Schedule (15 weeks, 2 games/week) ---------- */
+function buildSeasonSchedule(){
+  // We generate 2 matchups per team per week via pairing, with conf bias late season.
+  const weeks = [];
+  const byConf = {};
+  for(const t of S.league.teams) (byConf[t.conf] ??= []).push(t);
+
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const games = [];
+    const used = new Set();
+
+    // Each team should play 2 games/week: we do two pairing passes.
+    for(let pass=0; pass<2; pass++){
+      const order = S.league.teams.slice().sort(()=>Math.random()-0.5);
+      for(const a of order){
+        const key = a.id+"|"+pass;
+        if(used.has(key)) continue;
+
+        // prefer conference games more in weeks 9-15
+        const confBias = (w>=9) ? 0.72 : 0.46;
+        const same = (byConf[a.conf]||[]).filter(x=>x.id!==a.id && !used.has(x.id+"|"+pass));
+        const any  = S.league.teams.filter(x=>x.id!==a.id && !used.has(x.id+"|"+pass));
+
+        const pool = (Math.random()<confBias && same.length) ? same : any;
+        if(!pool.length) continue;
+
+        const b = U.pick(pool);
+        used.add(a.id+"|"+pass);
+        used.add(b.id+"|"+pass);
+
+        // home/away split
+        const home = (Math.random()<0.5) ? a.id : b.id;
+        const away = (home===a.id) ? b.id : a.id;
+
+        games.push({
+          home, away,
+          played:false,
+          scoreH:0, scoreA:0,
+          confGame: (getTeam(home).conf===getTeam(away).conf)
+        });
+      }
+    }
+
+    weeks.push({week:w, games});
+  }
+  return weeks;
+}
+
+/* ---------- Conference standings + tourneys ---------- */
+function confList(){
+  const set = new Set(S.league.teams.map(t=>t.conf));
+  return Array.from(set.values()).sort();
+}
+function confStandings(conf){
+  const list = S.league.teams.filter(t=>t.conf===conf);
+  return list.slice().sort((a,b)=>{
+    const aG=(a.season.confW+a.season.confL)||0;
+    const bG=(b.season.confW+b.season.confL)||0;
+    const aPct=aG? a.season.confW/aG : 0;
+    const bPct=bG? b.season.confW/bG : 0;
+    if(bPct!==aPct) return bPct-aPct;
+    if(b.season.w!==a.season.w) return b.season.w-a.season.w;
+    return teamPollScore(b)-teamPollScore(a);
+  });
+}
+function buildConfTourneyBrackets(){
+  // Top 8 per conference (or all if <8). Single-elim.
+  const brackets = [];
+  for(const conf of confList()){
+    const st = confStandings(conf);
+    const field = (st.length<=8) ? st : st.slice(0,8);
+    // seeds 1..N
+    const seeded = field.map((t,i)=>({seed:i+1, teamId:t.id}));
+    // quarterfinals: 1v8,4v5,2v7,3v6
+    const pairs = [];
+    const N = seeded.length;
+    if(N>=8){
+      pairs.push([seeded[0], seeded[7]]);
+      pairs.push([seeded[3], seeded[4]]);
+      pairs.push([seeded[1], seeded[6]]);
+      pairs.push([seeded[2], seeded[5]]);
+    } else if(N===7){
+      // 1 bye, 2v7,3v6,4v5 then 1 enters semis
+      pairs.push([seeded[1], seeded[6]]);
+      pairs.push([seeded[2], seeded[5]]);
+      pairs.push([seeded[3], seeded[4]]);
+    } else if(N===6){
+      pairs.push([seeded[2], seeded[5]]);
+      pairs.push([seeded[3], seeded[4]]);
+    } else if(N===5){
+      pairs.push([seeded[3], seeded[4]]);
+    } else if(N===4){
+      pairs.push([seeded[0], seeded[3]]);
+      pairs.push([seeded[1], seeded[2]]);
+    } else if(N===3){
+      pairs.push([seeded[1], seeded[2]]);
+    } else if(N===2){
+      pairs.push([seeded[0], seeded[1]]);
+    } else {
+      // 1 team auto champ
+    }
+
+    const rounds = [];
+    if(N<=1){
+      rounds.push([{a:seeded[0]||null,b:null,res:null}]);
+    } else {
+      rounds.push(pairs.map(p=>({a:p[0], b:p[1], res:null})));
+    }
+    brackets.push({conf, seeded, rounds, champTeamId:null, done:false});
+  }
+  S.post.confTourneys = brackets;
+}
+
+function simConfTourneys(){
+  // Sim all conf tourneys fully in one advance
+  const results = [];
+  for(const bt of S.post.confTourneys){
+    const my = getUserTeam();
+    // generate rounds until champ
+    let field = bt.seeded.slice();
+    if(field.length<=1){
+      bt.champTeamId = field[0]?.teamId || null;
+      bt.done = true;
+      if(bt.champTeamId) results.push({conf:bt.conf, champ: bt.champTeamId});
+      continue;
+    }
+
+    // helper to play a match
+    const play = (A,B)=>{
+      const ta=getTeam(A.teamId), tb=getTeam(B.teamId);
+      // higher seed treated as "home-ish" but neutral-ish. small edge.
+      const hi = (A.seed<B.seed) ? A : B;
+      const lo = (A.seed<B.seed) ? B : A;
+      const res = simBasketballGame(getTeam(hi.teamId), getTeam(lo.teamId), true, true);
+      const winId = res.winnerId;
+      const hTeam = getTeam(res.winnerId===hi.teamId?hi.teamId:lo.teamId);
+      const lTeam = getTeam(res.winnerId===hi.teamId?lo.teamId:hi.teamId);
+
+      // record tourney wins
+      hTeam.staff.HC.career.tourneyWins = (hTeam.staff.HC.career.tourneyWins||0)+1;
+      if(my && winId===my.id){ S.userCoach.career.tourneyWins++; addXP(S.userCoach, 55); }
+
+      return {winId, line:`${getTeam(hi.teamId).name} ${res.h}-${res.a} ${getTeam(lo.teamId).name}`, score:{h:res.h,a:res.a, hi:hi.teamId, lo:lo.teamId}};
+    };
+
+    // We simulate a simple seeded bracket: keep matching best vs worst.
+    let alive = field.map(x=>({...x}));
+    let roundIdx = 0;
+    while(alive.length>1 && roundIdx<8){
+      const roundGames = [];
+      const next = [];
+      const sorted = alive.slice().sort((a,b)=>a.seed-b.seed);
+      while(sorted.length){
+        const a = sorted.shift();
+        const b = sorted.pop() || null;
+        if(!b){
+          next.push(a);
+          roundGames.push({bye:true, teamId:a.teamId});
+          continue;
+        }
+        const res = play(a,b);
+        const winnerSeedObj = (res.winId===a.teamId)?a:b;
+        next.push(winnerSeedObj);
+        roundGames.push({a:a.teamId,b:b.teamId, winner:res.winId, h:res.score.h, aPts:res.score.a});
+      }
+      bt.rounds[roundIdx] = roundGames;
+      alive = next;
+      roundIdx++;
+    }
+    bt.champTeamId = alive[0]?.teamId || null;
+    bt.done = true;
+    if(bt.champTeamId) results.push({conf:bt.conf, champ: bt.champTeamId});
+  }
+
+  // mark autobids
+  for(const t of S.league.teams) t.isAutoBid=false;
+  for(const r of results){
+    const champ = getTeam(r.champ);
+    if(champ) champ.isAutoBid=true;
+  }
+
+  // popup for user if won conf tourney
+  const my = getUserTeam();
+  if(my){
+    const won = my.isAutoBid;
+    queueModal({
+      type:"milestone",
+      title: won ? "AUTO-BID CLINCHED!" : "CONFERENCE TOURNEY COMPLETE",
+      teamName: my.name,
+      line: won ? "You won your conference tournament." : "Conference tournaments are finished.",
+      icon: won ? "🏆" : "🏀"
+    });
+  }
+}
+
+/* ---------- NCAA selection + bracket build (68 teams, First Four) ---------- */
+function committeeScore(t){
+  const g = t.season.games||0;
+  const winPct = g ? (t.season.w/g) : 0;
+  const margin = g ? ((t.season.pf - t.season.pa)/g) : 0;
+  const confBoost = 0.10 * (TEAMSET.conferences.find(c=>c.name===t.conf)?.base || 65);
+  return (winPct*120) + (margin*1.1) + (t.prestige*0.35) + (t.ovr*0.25) + confBoost;
+}
+function buildNCAAField(){
+  // autobids: every conference champ (we approximated via conf tourney champs)
+  const autos = S.league.teams.filter(t=>t.isAutoBid);
+  const ranked = S.league.teams.slice().sort((a,b)=>committeeScore(b)-committeeScore(a));
+
+  const field = [];
+  const autoSet = new Set(autos.map(t=>t.id));
+  for(const a of autos) field.push({teamId:a.id, auto:true});
+  for(const t of ranked){
+    if(field.length>=GAME.NCAA_TEAMS) break;
+    if(autoSet.has(t.id)) continue;
+    field.push({teamId:t.id, auto:false});
+  }
+
+  // seed 1..68 by committee
+  field.sort((a,b)=>committeeScore(getTeam(b.teamId))-committeeScore(getTeam(a.teamId)));
+  field.forEach((x,i)=>x.rank=i+1);
+
+  // Build 4 regions, 16 seeds each + First Four
+  // Strategy:
+  // - Top 16 -> #1-#4 seeds lines by S-curve
+  // - Continue to seed lines 5-16
+  // - First Four:
+  //   - 2 games between lowest 4 autobids -> play-in for 16 seeds
+  //   - 2 games between last 4 at-larges -> play-in for 11 seeds
+  const autosSorted = field.filter(x=>x.auto).slice().sort((a,b)=>committeeScore(getTeam(a.teamId))-committeeScore(getTeam(b.teamId))); // weakest autos first
+  const atLargeSorted = field.filter(x=>!x.auto).slice().sort((a,b)=>committeeScore(getTeam(a.teamId))-committeeScore(getTeam(b.teamId))); // weakest at-larges first
+
+  const playIn16 = autosSorted.slice(0,4).map(x=>x.teamId);    // 4 teams
+  const playIn11 = atLargeSorted.slice(0,4).map(x=>x.teamId);  // 4 teams
+
+  const playInSet = new Set([...playIn16, ...playIn11]);
+
+  // Remaining 64 after removing 8 play-in teams (still count as part of 68; winners fill bracket)
+  const main = field.filter(x=>!playInSet.has(x.teamId)).map(x=>x.teamId);
+
+  // Assign regions
+  const regions = ["East","West","South","Midwest"];
+  const regionSlots = { East:[], West:[], South:[], Midwest:[] };
+
+  // Build seed lines for main bracket positions
+  // We'll fill by “seed line buckets” (1..16), 4 teams per seed.
+  const seeds = {};
+  for(let s=1;s<=16;s++) seeds[s]=[];
+
+  // Determine seed for each team in main using its rank among field.
+  // We map ranks to seeds: 1-4 => seed1, 5-8 => seed2, ... 61-64 => seed16.
+  // But we must reserve two 11s and two 16s for play-in winners.
+  function seedFromRank(rank){ return Math.ceil(rank/4); }
+
+  // Rank order (strongest to weakest) for main
+  const mainSorted = main.slice().sort((a,b)=>committeeScore(getTeam(b))-committeeScore(getTeam(a)));
+  for(const tid of mainSorted){
+    const rank = field.find(x=>x.teamId===tid)?.rank || 999;
+    let seed = seedFromRank(rank);
+    // Clamp, but avoid overfilling; we’ll adjust if bucket full.
+    seed = U.clamp(seed,1,16);
+    // Reserve 11 and 16 slots: each has 2 “regular” teams (because 2 spots filled by play-in winners).
+    const cap = (seed===11 || seed===16) ? 2 : 4;
+    while(seeds[seed].length>=cap && seed<16) seed++;
+    while(seeds[seed].length>=((seed===11||seed===16)?2:4) && seed>1) seed--;
+    seeds[seed].push(tid);
+  }
+
+  // S-curve region distribution
+  const curve = {
+    1:["East","West","South","Midwest"],
+    2:["Midwest","South","West","East"],
+    3:["East","West","South","Midwest"],
+    4:["Midwest","South","West","East"],
+    5:["East","West","South","Midwest"],
+    6:["Midwest","South","West","East"],
+    7:["East","West","South","Midwest"],
+    8:["Midwest","South","West","East"],
+    9:["East","West","South","Midwest"],
+    10:["Midwest","South","West","East"],
+    11:["East","West"], // only 2 direct (other 2 from play-in)
+    12:["South","Midwest","West","East"],
+    13:["East","West","South","Midwest"],
+    14:["Midwest","South","West","East"],
+    15:["East","West","South","Midwest"],
+    16:["South","Midwest"], // only 2 direct (other 2 from play-in)
+  };
+
+  for(let s=1;s<=16;s++){
+    const list = seeds[s]||[];
+    const order = curve[s] || regions;
+    for(let i=0;i<list.length;i++){
+      const reg = order[i % order.length];
+      regionSlots[reg].push({seed:s, teamId:list[i], source:"direct"});
+    }
+  }
+
+  // Inject play-in placeholders
+  // 16 seeds: two regions get play-in for 16
+  const pi16Pairs = [
+    {a:playIn16[0], b:playIn16[1], seed:16, region:"East"},
+    {a:playIn16[2], b:playIn16[3], seed:16, region:"West"},
+  ];
+  // 11 seeds: two regions get play-in for 11
+  const pi11Pairs = [
+    {a:playIn11[0], b:playIn11[1], seed:11, region:"South"},
+    {a:playIn11[2], b:playIn11[3], seed:11, region:"Midwest"},
+  ];
+
+  // Add placeholders to region slots
+  pi16Pairs.forEach((m,i)=> regionSlots[m.region].push({seed:16, teamId:`PI16_${i}`, source:"playin", playin:m}));
+  pi11Pairs.forEach((m,i)=> regionSlots[m.region].push({seed:11, teamId:`PI11_${i}`, source:"playin", playin:m}));
+
+  // Normalize each region: ensure seeds 1..16 present exactly once
+  function normalizeRegion(reg){
+    const slots = regionSlots[reg];
+    // keep best candidate per seed (if duplicates)
+    const bySeed = {};
+    for(const s of slots){
+      if(!bySeed[s.seed]) bySeed[s.seed]=[];
+      bySeed[s.seed].push(s);
+    }
+    const final=[];
+    for(let seed=1; seed<=16; seed++){
+      const arr = bySeed[seed]||[];
+      if(arr.length===1){ final.push(arr[0]); continue; }
+      if(arr.length>1){
+        // keep the strongest team for that seed
+        arr.sort((a,b)=>committeeScore(getTeam(b.teamId||"")||{season:{},prestige:0,ovr:0})-committeeScore(getTeam(a.teamId||"")||{season:{},prestige:0,ovr:0}));
+        final.push(arr[0]);
+        continue;
+      }
+      // missing seed (rare): fill with best leftover from other regions
+      final.push({seed, teamId:null, source:"empty"});
+    }
+    regionSlots[reg]=final;
+  }
+  regions.forEach(normalizeRegion);
+
+  // Build R64 matchups per region: 1v16, 8v9, 5v12, 4v13, 6v11, 3v14, 7v10, 2v15
+  const regionPairs = [
+    [1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]
+  ];
+  const r64 = [];
+  for(const reg of regions){
+    const slots = regionSlots[reg];
+    const getSeed = (s)=> slots.find(x=>x.seed===s);
+    for(const [aS,bS] of regionPairs){
+      const A = getSeed(aS), B = getSeed(bS);
+      r64.push({region:reg, a:A, b:B, res:null});
+    }
+  }
+
+  // store postseason ncaa
+  S.post.ncaa = {
+    field, // 68
+    regions,
+    regionSlots,
+    playIn16: pi16Pairs.map((x,i)=>({id:`PI16_${i}`, ...x, res:null})),
+    playIn11: pi11Pairs.map((x,i)=>({id:`PI11_${i}`, ...x, res:null})),
+    rounds: { r64, r32:[], s16:[], e8:[], ff:[], title:[] },
+    roundIdx: 0,
+    champId: null,
+    recapByRound: [], // for end popup
+  };
+
+  // user popup: seed/region if in field
+  const my = getUserTeam();
+  if(my){
+    const inField = field.find(x=>x.teamId===my.id);
+    if(inField){
+      queueModal({ type:"selection", title:"NCAA TOURNAMENT SELECTION", teamName: my.name, line: inField.auto ? "Auto-Bid" : "At-Large" });
+    } else {
+      queueModal({ type:"milestone", title:"NO TOURNAMENT", teamName: my.name, line:"You missed the NCAA field.", icon:"🧊" });
+    }
+  }
+}
+
+function resolvePlayInSlot(slotObj){
+  // slotObj looks like {seed, teamId:"PI16_0", source:"playin", playin:{a,b,seed,region}}
+  const p = slotObj.playin;
+  if(!p) return null;
+  // If already have res, return winner
+  const key = (p.seed===16 ? S.post.ncaa.playIn16 : S.post.ncaa.playIn11).find(x=>x.region===p.region && x.seed===p.seed && x.a===p.a && x.b===p.b);
+  if(key?.res?.winId) return key.res.winId;
+  return null;
+}
+
+/* ---------- NCAA sim (state machine that cannot loop backwards) ---------- */
+function pushRoundRecap(title, lines){
+  S.post.ncaa.recapByRound.push({title, lines: lines.slice()});
+}
+function showRoundScoresPopup(title, lines){
+  queueModal({
+    type:"scores",
+    title,
+    lines
+  });
+}
+
+function simNCAARound(){
+  const N = S.post.ncaa;
+  const my = getUserTeam();
+
+  // Round 0: First Four
+  if(N.roundIdx===0){
+    const lines=[];
+    const play = (aId,bId)=>{
+      const A=getTeam(aId), B=getTeam(bId);
+      const res = simBasketballGame(A,B,true,true);
+      const winId = res.winnerId;
+      // tourney win stat
+      getTeam(winId).staff.HC.career.tourneyWins = (getTeam(winId).staff.HC.career.tourneyWins||0)+1;
+      if(my && winId===my.id){ S.userCoach.career.tourneyWins++; addXP(S.userCoach, 70); }
+      lines.push(`${A.name} ${res.h}-${res.a} ${B.name}`);
+      return {h:res.h,a:res.a,winId};
+    };
+
+    for(const m of N.playIn16){
+      m.res = play(m.a,m.b);
+    }
+    for(const m of N.playIn11){
+      m.res = play(m.a,m.b);
+    }
+
+    pushRoundRecap("First Four", lines);
+    showRoundScoresPopup("First Four — Final Scores", lines);
+
+    N.roundIdx = 1; // advance strictly forward
+    return;
+  }
+
+  // helper to resolve slot to actual teamId
+  const slotTeamId = (slot)=>{
+    if(!slot) return null;
+    if(slot.source==="playin"){
+      const win = resolvePlayInSlot(slot);
+      return win;
+    }
+    return slot.teamId;
+  };
+
+  const playMatch = (aId,bId)=>{
+    const A=getTeam(aId), B=getTeam(bId);
+    const res = simBasketballGame(A,B,true,true);
+    const winId = res.winnerId;
+
+    // tourney win stat
+    getTeam(winId).staff.HC.career.tourneyWins = (getTeam(winId).staff.HC.career.tourneyWins||0)+1;
+    if(my && winId===my.id){ S.userCoach.career.tourneyWins++; addXP(S.userCoach, 85); }
+
+    return {h:res.h,a:res.a,winId, line:`${A.name} ${res.h}-${res.a} ${B.name}`};
+  };
+
+  // Round 1: R64
+  if(N.roundIdx===1){
+    const lines=[];
+    const winners=[];
+    for(const m of N.rounds.r64){
+      const aId=slotTeamId(m.a), bId=slotTeamId(m.b);
+      if(!aId || !bId) continue;
+      const res=playMatch(aId,bId);
+      m.res=res;
+      winners.push(res.winId);
+      lines.push(res.line);
+    }
+
+    // Build R32 by pairing winners in order (per region chunk)
+    const r32=[];
+    for(let i=0;i<winners.length;i+=2){
+      r32.push({a:winners[i], b:winners[i+1], res:null});
+    }
+    N.rounds.r32 = r32;
+
+    pushRoundRecap("Round of 64", lines);
+    showRoundScoresPopup("Round of 64 — Final Scores", lines);
+
+    N.roundIdx = 2;
+    return;
+  }
+
+  // Round 2: R32
+  if(N.roundIdx===2){
+    const lines=[];
+    const winners=[];
+    for(const m of N.rounds.r32){
+      const res=playMatch(m.a,m.b);
+      m.res=res;
+      winners.push(res.winId);
+      lines.push(res.line);
+    }
+    const s16=[];
+    for(let i=0;i<winners.length;i+=2) s16.push({a:winners[i], b:winners[i+1], res:null});
+    N.rounds.s16 = s16;
+
+    pushRoundRecap("Round of 32", lines);
+    showRoundScoresPopup("Round of 32 — Final Scores", lines);
+
+    N.roundIdx = 3;
+    return;
+  }
+
+  // Round 3: Sweet 16
+  if(N.roundIdx===3){
+    const lines=[];
+    const winners=[];
+    for(const m of N.rounds.s16){
+      const res=playMatch(m.a,m.b);
+      m.res=res;
+      winners.push(res.winId);
+      lines.push(res.line);
+    }
+    const e8=[];
+    for(let i=0;i<winners.length;i+=2) e8.push({a:winners[i], b:winners[i+1], res:null});
+    N.rounds.e8 = e8;
+
+    pushRoundRecap("Sweet 16", lines);
+    showRoundScoresPopup("Sweet 16 — Final Scores", lines);
+
+    N.roundIdx = 4;
+    return;
+  }
+
+  // Round 4: Elite 8
+  if(N.roundIdx===4){
+    const lines=[];
+    const winners=[];
+    for(const m of N.rounds.e8){
+      const res=playMatch(m.a,m.b);
+      m.res=res;
+      winners.push(res.winId);
+      lines.push(res.line);
+    }
+    // Final Four
+    N.rounds.ff = [{a:winners[0], b:winners[1], res:null},{a:winners[2], b:winners[3], res:null}];
+
+    // Final Four milestone
+    if(my && winners.includes(my.id)){
+      S.userCoach.career.finalFours++;
+      queueModal({ type:"milestone", title:"FINAL FOUR!", teamName: my.name, line:"You made the Final Four.", icon:"🏟️" });
+    }
+
+    pushRoundRecap("Elite 8", lines);
+    showRoundScoresPopup("Elite 8 — Final Scores", lines);
+
+    N.roundIdx = 5;
+    return;
+  }
+
+  // Round 5: Final Four
+  if(N.roundIdx===5){
+    const lines=[];
+    const winners=[];
+    for(const m of N.rounds.ff){
+      const res=playMatch(m.a,m.b);
+      m.res=res;
+      winners.push(res.winId);
+      lines.push(res.line);
+    }
+    N.rounds.title = [{a:winners[0], b:winners[1], res:null}];
+
+    if(my && winners.includes(my.id)){
+      queueModal({ type:"milestone", title:"NATIONAL CHAMPIONSHIP!", teamName: my.name, line:"You made the title game.", icon:"🏆" });
+    }
+
+    pushRoundRecap("Final Four", lines);
+    showRoundScoresPopup("Final Four — Final Scores", lines);
+
+    N.roundIdx = 6;
+    return;
+  }
+
+  // Round 6: Title
+  if(N.roundIdx===6){
+    const m=N.rounds.title[0];
+    const res=playMatch(m.a,m.b);
+    m.res=res;
+    N.champId = res.winId;
+
+    const champ = getTeam(res.winId);
+    champ.staff.HC.career.titles = (champ.staff.HC.career.titles||0)+1;
+
+    const my = getUserTeam();
+    if(my && res.winId===my.id){
+      S.userCoach.career.titles++;
+      addXP(S.userCoach, 240);
+      toast("CHAMPIONS!", `${my.name} won the title!`, "good");
+      queueModal({ type:"milestone", title:"NATIONAL CHAMPIONS!", teamName: my.name, line:"You won it all.", icon:"🏆" });
+    } else {
+      toast("Champion", `${champ.name} won the title.`, "warn");
+    }
+
+    pushRoundRecap("National Championship", [res.line]);
+    showRoundScoresPopup("National Championship — Final Score", [res.line]);
+
+    // End-of-tourney recap popup (all rounds)
+    const allLines=[];
+    for(const r of N.recapByRound){
+      allLines.push(`— ${r.title} —`);
+      allLines.push(...r.lines);
+      allLines.push("");
+    }
+    queueModal({ type:"tourney_recap", title:"TOURNAMENT RECAP", lines: allLines });
+
+    // Done -> offseason (strict forward progress)
+    S.phase = "offseason";
+    S.weekIndex = 0;
+
+    return;
+  }
+}
+
+/* ---------- Jobs (realistic, hard rebuild) ---------- */
+function coachLegacyScore(c){
+  const w = c?.career?.wins||0;
+  const l = c?.career?.losses||0;
+  const t = c?.career?.titles||0;
+  const tw = c?.career?.tourneyWins||0;
+  const ff = c?.career?.finalFours||0;
+
+  const games = w + l;
+  const pct = games ? (w/games) : 0;
+
+  const winValue = 85 * Math.log10(1 + w);
+  const lossPenalty = 55 * Math.log10(1 + l);
+  const pctValue = 900 * Math.max(0, pct - 0.45);
+  const titleValue = t * 14000;
+  const ffValue = ff * 2600;
+  const tourneyValue = tw * 140;
+
+  const base = c?.legacy || 0;
+  return Math.round(base + winValue - lossPenalty + pctValue + titleValue + ffValue + tourneyValue);
+}
+function makeContract(team){
+  const salaryM = Math.round((team.budget*0.12 + team.prestige*0.10 + 1.5) * 100)/100;
+  const years = U.rint(3,6);
+  const buyoutM = Math.round(salaryM * years * 0.70 * 100)/100;
+  return {salaryM, years, buyoutM};
+}
+function genJobOffers(){
+  const coach=S.userCoach;
+  const cur=getUserTeam();
+  if(!coach || !cur) return;
+
+  const legacy = coachLegacyScore(coach);
+  const yearScore = (cur.season.w*110) + (coach.career.titles*6500) + (coach.career.finalFours*1800);
+  const score = legacy + yearScore;
+
+  const pool = S.league.teams.filter(t=>t.id!==cur.id).slice().sort(()=>Math.random()-0.5);
+  const offers=[];
+
+  // hard rebuild realism gates
+  for(const t of pool){
+    if(offers.length>=10) break;
+
+    const dp = t.prestige - cur.prestige;
+
+    // Primary gate: you cannot jump up more than ~18 prestige unless you have major tournament success.
+    const hasBreakthrough = (coach.career.titles>=1) || (coach.career.finalFours>=2) || (coach.career.tourneyWins>=12);
+    const maxJump = hasBreakthrough ? 28 : 18;
+
+    if(dp > maxJump) continue;
+
+    // You also shouldn't get many offers from bluebloods early
+    const blueblood = t.prestige>=88;
+    if(blueblood && !hasBreakthrough) continue;
+
+    // Chance based on score and dp
+    const chance = U.clamp(0.08 + (score/26000) + (dp*0.006) + Math.random()*0.10, 0.05, 0.55);
+    if(Math.random()>chance) continue;
+
+    offers.push({
+      id: U.uuid(),
+      teamId: t.id,
+      teamName: t.name,
+      conf: t.conf,
+      prestige: t.prestige,
+      contract: makeContract(t)
+    });
+  }
+
+  // ensure minimum
+  while(offers.length<3){
+    const t=U.pick(pool);
+    offers.push({ id:U.uuid(), teamId:t.id, teamName:t.name, conf:t.conf, prestige:t.prestige, contract: makeContract(t) });
+  }
+  S.jobs.offers = offers;
+}
+function acceptJob(offerId){
+  const off=(S.jobs.offers||[]).find(o=>o.id===offerId);
+  if(!off) return;
+  const team=getTeam(off.teamId);
+  if(!team) return;
+  S.userTeamId = team.id;
+  placeUserCoachOnTeam(team, S.userCoach);
+  toast("Job Accepted", `${team.name} (${team.conf})`, "good");
+}
+
+/* ---------- Retirements + HOF ---------- */
+function buildInitialRecords(){ return { coachRegistry: [], legacy: [], hallOfFame: [] }; }
+function syncCoachRegistry(){
+  S.records ??= buildInitialRecords();
+  S.records.coachRegistry ??= [];
+  const map = new Map(S.records.coachRegistry.map(x=>[x.id,x]));
+  for(const t of S.league.teams){
+    const c=t.staff?.HC;
+    if(!c?.id) continue;
+    c.legacy = coachLegacyScore(c);
+    map.set(c.id,{
+      id:c.id, name:c.name, retired:!!c.retired, hof:!!c.hof,
+      yearsCoached:c.yearsCoached||0,
+      legacy: c.legacy,
+      career:{...(c.career||{})},
+      lastSchool:t.name, lastConf:t.conf, updatedYear:S.year,
+      user:false, retiredYear:c.retiredYear||0,
+      hofReasons: c.hofReasons || []
+    });
+  }
+  if(S.userCoach?.id){
+    const team=getUserTeam();
+    const c=S.userCoach;
+    c.legacy = coachLegacyScore(c);
+    map.set(c.id,{
+      id:c.id, name:c.name, retired:!!c.retired, hof:!!c.hof,
+      yearsCoached:c.yearsCoached||0,
+      legacy: c.legacy,
+      career:{...(c.career||{})},
+      lastSchool:team?.name||"—", lastConf:team?.conf||"—", updatedYear:S.year,
+      user:true, retiredYear:c.retiredYear||0,
+      hofReasons: c.hofReasons || []
+    });
+  }
+  S.records.coachRegistry = Array.from(map.values());
+}
+function rebuildLegacyLeaderboard(){
+  syncCoachRegistry();
+  const list = S.records.coachRegistry.slice().sort((a,b)=>(b.legacy-a.legacy)||((b.career?.wins||0)-(a.career?.wins||0)));
+  S.records.legacy = list.slice(0,500).map((x)=>({
+    id:x.id, name:x.name, school:x.lastSchool, legacy:x.legacy,
+    note: x.hof ? "HOF" : (x.retired ? "Retired" : "Active"),
+    user: !!x.user
+  }));
+}
+function getUserLegacyRank(){
+  rebuildLegacyLeaderboard();
+  const id=S.userCoach?.id;
+  const idx=(S.records.legacy||[]).findIndex(x=>x.id===id);
+  return idx>=0?idx+1:null;
+}
+function processRetirements(){
+  S.records ??= buildInitialRecords();
+  S.records.hallOfFame ??= [];
+
+  // AI retirements
+  for(const t of S.league.teams){
+    const c=t.staff?.HC;
+    if(!c || c.retired) continue;
+
+    const y=c.yearsCoached||0;
+    const must = y>=35;
+    const maybe = (y>=25 && Math.random()<0.10);
+
+    if(must || maybe){
+      c.retired=true;
+      c.retiredYear=S.year;
+      c.hof = hofEligible(c);
+      c.hofReasons = c.hof ? hofReasons(c) : [];
+
+      const entry={
+        id:c.id, name:c.name, lastSchool:t.name, lastConf:t.conf, years:y,
+        legacy:coachLegacyScore(c), career:{...(c.career||{})},
+        hof:!!c.hof, retired:true, retiredYear:S.year, user:false,
+        hofReasons: c.hofReasons
+      };
+      S.records.coachRegistry.push(entry);
+      if(entry.hof) S.records.hallOfFame.push(entry);
+
+      t.staff.HC = makeCoach({name:genCoachName()});
+    }
+  }
+
+  // USER forced retirement at 35
+  const user=S.userCoach;
+  if(user && !user.retired){
+    const y = user.yearsCoached||0;
+    if(y>=35){
+      user.retired=true;
+      user.retiredYear=S.year;
+
+      user.hof = hofEligible(user);
+      user.hofReasons = user.hof ? hofReasons(user) : [];
+
+      const team=getUserTeam();
+      const entry={
+        id:user.id, name:user.name, lastSchool:team?.name||"—", lastConf:team?.conf||"—",
+        years:y, legacy:coachLegacyScore(user), career:{...(user.career||{})},
+        hof:!!user.hof, retired:true, retiredYear:S.year, user:true,
+        hofReasons: user.hofReasons
+      };
+
+      S.records.coachRegistry.push(entry);
+      if(entry.hof) S.records.hallOfFame.push(entry);
+
+      rebuildLegacyLeaderboard();
+
+      if(entry.hof){
+        queueModal({ type:"hof", title:"HALL OF FAME INDUCTION", entry });
+      } else {
+        queueModal({ type:"retire", title:"CAREER RETIREMENT", entry });
+      }
+
+      S.phase="retired";
+    }
+  }
+
+  rebuildLegacyLeaderboard();
+}
+
+/* ---------- State ---------- */
+let S = null;
+let activeTab = "home";
+
+/* ---------- Helpers ---------- */
+function getTeam(id){ return S.league.teams.find(t=>t.id===id); }
+function getUserTeam(){ return S?.userTeamId ? getTeam(S.userTeamId) : null; }
+function placeUserCoachOnTeam(team, coach){
+  team.staff.HC = coach;
+  computeNeeds(team);
+}
+
+/* ---------- New Game / Reset ---------- */
+function newGame(){
+  const teams = buildLeague(TEAMSET);
+  S = {
+    year: 2026,
+    phase: "setup",
+    weekIndex: 0,               // season uses 0..15, offseason uses 0..3
+    league:{ teams, schedule: [] },
+    recruits: buildRecruitPool(520),
+    jobs:{ offers: [] },
+    userCoach: null,
+    userTeamId: null,
+    settings:{
+      hideLockedRecruits:false,
+      xpSpeed: 1,
+      spRate: 1,
+      infiniteSP: false,
+      difficulty: 1.05
+    },
+    flags:{ startedCareer:false },
+    records: buildInitialRecords(),
+    polls: { apTop25:[], lastReason:"" },
+    post:{
+      confTourneys:[],
+      ncaa:null
+    },
+    ui:{
+      modalQueue: [],
+      rosterPos:"",
+      recruitFilters:{ pos:"", state:"", stars:"", sort:"rank", board:"all" },
+      rankingView:"ap"
+    }
+  };
+  resetForNewSeason();
+  updatePolls("init");
+}
+function resetForNewSeason(){
+  // reset season stats
+  for(const t of S.league.teams){
+    t.season = { w:0,l:0, pf:0, pa:0, games:0, confW:0, confL:0 };
+    t.isAutoBid=false;
+    t.ncaaSeed=null;
+    t.ncaaRegion=null;
+    computeNeeds(t);
+    t.recruiting.offered=[];
+    t.recruiting.spentMap={};
+    t.recruiting.commits=[];
+    t.recruiting.classSlots=GAME.CLASS_SLOTS;
+    t.recruiting.spent=0;
+    t.apRank=999;
+  }
+  // new schedule
+  S.league.schedule = buildSeasonSchedule();
+  refreshRecruitingBudgets();
+  S.recruits = buildRecruitPool(520);
+  S.post.confTourneys=[];
+  S.post.ncaa=null;
+}
+
+/* ---------- Regular season sim for a week (2 games per team) ---------- */
+function simWeekGames(){
+  const wk = S.weekIndex;
+  const sched = S.league.schedule[wk-1];
+  if(!sched) return;
+
+  const my = getUserTeam();
+  const linesForYou=[];
+
+  for(const g of sched.games){
+    if(g.played) continue;
+    const h = getTeam(g.home), a = getTeam(g.away);
+    const res = simBasketballGame(h,a,false,false);
+    g.played=true; g.scoreH=res.h; g.scoreA=res.a;
+
+    applyResult(h,a,res.h,res.a,g.confGame);
+
+    if(my && (h.id===my.id || a.id===my.id)){
+      const myHome = (h.id===my.id);
+      const myPts = myHome ? res.h : res.a;
+      const oppPts = myHome ? res.a : res.h;
+      const opp = myHome ? a : h;
+      const win = (res.winnerId===my.id);
+
+      linesForYou.push(`${my.name} ${myPts}-${oppPts} ${opp.name}`);
+      addXP(S.userCoach, win ? 18 : 10);
+    }
+  }
+
+  updatePolls("weekly_games");
+  if(linesForYou.length){
+    toast("Week Results", linesForYou[0], linesForYou.length>1?"good":"");
+  }
+}
+
+/* ---------- Advance Engine (NO LOOPS) ---------- */
+function advance(){
+  if(!S) return;
+  if(S.ui.modalQueue.length) return;
+
+  if(S.phase==="retired") return toast("Retired", "Start a new coach to continue this world.", "warn");
+  if(S.phase==="setup") return toast("Setup", "Create coach and pick a team.", "warn");
+
+  // PRESEASON -> Week 1
+  if(S.phase==="season" && S.weekIndex===0){
+    resetForNewSeason();
+    S.weekIndex = 1;
+    toast("Season Start", `Year ${S.year} begins. Week 1 loaded.`, "good");
+    return;
+  }
+
+  // REG SEASON weeks 1..15
+  if(S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS){
+    // recruiting tick each week
+    aiRecruitingTick();
+    simWeekGames();
+    resolveCommitments();
+
+    // next week
+    S.weekIndex += 1;
+
+    if(S.weekIndex<=GAME.REG_WEEKS){
+      refreshRecruitingBudgets();
+      toast("Next Week", `${weekName()}`, "good");
+      return;
+    }
+
+    // season over -> conf tourneys
+    S.phase = "conf_tourney";
+    toast("Next", "Conference Tournaments", "good");
+    return;
+  }
+
+  // CONF TOURNEYS (single advance to sim them)
+  if(S.phase==="conf_tourney"){
+    buildConfTourneyBrackets();
+    simConfTourneys();
+    // after modal ack -> selection
+    S.phase = "selection";
+    return;
+  }
+
+  // SELECTION
+  if(S.phase==="selection"){
+    buildNCAAField();
+    // after modal ack -> ncaa
+    S.phase = "ncaa";
+    // NCAA roundIdx starts at 0
+    return;
+  }
+
+  // NCAA rounds (strict forward progression)
+  if(S.phase==="ncaa"){
+    simNCAARound();
+    // simNCAARound itself advances roundIdx or flips to offseason
+    return;
+  }
+
+  // OFFSEASON (4 weeks)
+  if(S.phase==="offseason"){
+    if(S.weekIndex===0){
+      // Jobs carousel active immediately
+      genJobOffers();
+      S.weekIndex=1;
+      toast("Offseason", "Job carousel is live.", "good");
+      return;
+    }
+    if(S.weekIndex===1){
+      // recruiting budgets for offseason recruiting week
+      refreshRecruitingBudgets();
+      S.weekIndex=2;
+      toast("Offseason", "Recruiting week (late).", "good");
+      return;
+    }
+    if(S.weekIndex===2){
+      aiRecruitingTick();
+      resolveCommitments();
+      S.weekIndex=3;
+      toast("Offseason", "Signing + progression next.", "good");
+      return;
+    }
+    if(S.weekIndex===3){
+      signAndProgress();
+
+      // season count
+      for(const t of S.league.teams){
+        if(t.staff?.HC) t.staff.HC.yearsCoached = (t.staff.HC.yearsCoached||0) + 1;
+      }
+      processRetirements();
+      if(S.phase==="retired") return;
+
+      S.year += 1;
+      S.phase = "season";
+      S.weekIndex = 0;
+
+      updatePolls("new_year");
+      toast("New Year", `Welcome to ${S.year}.`, "good");
+      return;
+    }
+  }
+}
+
+/* ---------- Save/Load ---------- */
+async function save(){
+  if(S){
+    const ok = await STORE.set(GAME.SAVE_KEY, S);
+    if(!ok) toast("Storage Full","Could not save.","bad");
+  }
+  updateSubline();
+}
+async function loadSave(){ return await STORE.get(GAME.SAVE_KEY); }
+async function hardReset(){ await STORE.del(GAME.SAVE_KEY); S=null; }
+
+/* ---------- Drawer + Tabs ---------- */
+function drawerOpen(){ document.getElementById("drawer").classList.add("open"); }
+function drawerClose(){ document.getElementById("drawer").classList.remove("open"); }
+
+const TABS = [
+  {id:"home", label:"Home", ico:"🏠"},
+  {id:"rankings", label:"Rankings", ico:"📊"},
+  {id:"coach", label:"Coach", ico:"🧠"},
+  {id:"recruit", label:"Recruiting", ico:"⭐"},
+  {id:"jobs", label:"Jobs", ico:"🎠"},
+  {id:"schedule", label:"Schedule", ico:"🗓️"},
+  {id:"roster", label:"Roster", ico:"📋"},
+  {id:"bracket", label:"Bracket", ico:"🧩"},
+  {id:"records", label:"Records", ico:"🏆"},
+  {id:"settings", label:"Settings", ico:"⚙️"},
+];
+
+function renderDrawerNav(){
+  const list = document.getElementById("navList");
+  list.innerHTML = TABS.map(t=>{
+    const a = (t.id===activeTab) ? "active" : "";
+    return `
+      <div class="navItem ${a}" data-act="tab" data-tab="${t.id}">
+        <div class="l"><span>${t.ico}</span><span>${U.safe(t.label)}</span></div>
+      </div>
+    `;
+  }).join("");
+}
+
+function updateSubline(){
+  const el = document.getElementById("subLine");
+  if(!S){ el.textContent="No save loaded."; return; }
+  const team = getUserTeam();
+  if(team && S.userCoach){
+    const cap = maxStarsByPrestige(team.prestige);
+    const seasons = (S.userCoach.yearsCoached||0);
+    const ap = team.apRank && team.apRank<=25 ? ` • AP #${team.apRank}` : "";
+    el.textContent = `Year ${S.year} • ${weekName()} • ${team.name} (${team.season.w}-${team.season.l})${ap} • Cap ${cap}★ • Seasons ${seasons}/35`;
+  } else el.textContent = `Year ${S.year} • ${weekName()} • Setup`;
+}
+
+/* ---------- Overlay modals ---------- */
+function renderOverlay(){
+  const root = document.getElementById("overlayRoot");
+  root.innerHTML = "";
+  if(!S?.ui?.modalQueue?.length) return;
+  const m = S.ui.modalQueue[0];
+
+  if(m.type==="milestone"){
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)} — ${U.safe(m.teamName||"")}</div>
+              <div class="subt">${U.safe(m.line||"")}</div>
+            </div>
+            <div class="logo">${U.safe(m.icon||"🏀")}</div>
+          </div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="selection"){
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)}</div>
+              <div class="subt">${U.safe(m.teamName)} • ${U.safe(m.line)}</div>
+            </div>
+            <div class="logo">🗳️</div>
+          </div>
+          <div class="sep"></div>
+          <button class="btnAccent" style="width:100%" data-act="modal_ack">Let’s Go</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="commit"){
+    const r = m.recruit;
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)} — ${U.safe(m.teamName)}</div>
+              <div class="subt">${"★".repeat(r.stars)} • ${U.safe(r.pos)} • OVR ${r.ovr} • ${U.safe(r.state)} ${r.openToAll? "• OPEN" : ""}</div>
+            </div>
+            <div class="logo">📝</div>
+          </div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="scheduleVisit"){
+    const r = S.recruits.find(x=>x.id===m.recruitId);
+    const team = getUserTeam();
+    if(!r || !team){
+      root.innerHTML = `<div class="overlay"><div class="modal"><div class="muted">Missing data.</div><div class="sep"></div><button class="btnWarn" style="width:100%" data-act="modal_ack">Close</button></div></div>`;
+      return;
+    }
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">Schedule Official Visit</div>
+              <div class="subt">${"★".repeat(r.stars)} • ${r.pos} • OVR ${r.ovr} • Cost ${m.cost} pts</div>
+            </div>
+            <div class="logo">🚌</div>
+          </div>
+          <div class="sep"></div>
+
+          <label>Choose Visit Week</label>
+          <select id="visit_week_sel">
+            ${m.weeks.map(w=>`<option value="${w}">${S.phase==="season" ? `Week ${w}` : `Offseason Wk${w+1}`}</option>`).join("")}
+          </select>
+
+          <div class="sep"></div>
+          <div class="row">
+            <button class="btnGood" style="flex:1" data-act="visit_confirm" data-rid="${r.id}">Confirm</button>
+            <button class="btnDanger" style="flex:1" data-act="modal_ack">Cancel</button>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="scores"){
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title||"Final Scores")}</div>
+              <div class="subt">Round results</div>
+            </div>
+            <div class="logo">📣</div>
+          </div>
+          <div class="sep"></div>
+          <div class="itemCard" style="white-space:pre-wrap; line-height:1.45">${U.safe((m.lines||[]).join("\n"))}</div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="tourney_recap"){
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title||"Tournament Recap")}</div>
+              <div class="subt">Every round, every score</div>
+            </div>
+            <div class="logo">🧾</div>
+          </div>
+          <div class="sep"></div>
+          <div class="itemCard" style="white-space:pre-wrap; line-height:1.45">${U.safe((m.lines||[]).join("\n"))}</div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="modal_ack">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="hof"){
+    const e=m.entry;
+    const reasons=(e.hofReasons||[]).length ? e.hofReasons.join(" • ") : "—";
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">🏛️ ${U.safe(m.title)}</div>
+              <div class="subt">${U.safe(e.name)} • ${U.safe(e.lastSchool||"—")} • ${e.years} seasons</div>
+            </div>
+            <div class="logo">🏆</div>
+          </div>
+          <div class="sep"></div>
+          <div class="itemCard">
+            <div class="itemTitle">${U.safe(e.name)} <span class="badge bGood">HOF</span></div>
+            <div class="itemMeta">${U.safe(e.lastSchool||"—")} • ${U.safe(e.lastConf||"—")} • Retired ${e.retiredYear}</div>
+            <div class="itemMeta">Career: ${(e.career?.wins||0)}-${(e.career?.losses||0)} • Titles ${(e.career?.titles||0)} • Tourney Wins ${(e.career?.tourneyWins||0)} • FF ${(e.career?.finalFours||0)}</div>
+            <div class="itemMeta">Legacy: ${U.fmt(e.legacy)}</div>
+            <div class="itemMeta"><span class="badge bAcc2">Qualified by</span> ${U.safe(reasons)}</div>
+          </div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="retire_continue">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  if(m.type==="retire"){
+    const e=m.entry;
+    root.innerHTML = `
+      <div class="overlay">
+        <div class="modal">
+          <div class="hero">
+            <div>
+              <div class="big">${U.safe(m.title)}</div>
+              <div class="subt">${e.hof ? "Hall of Fame Inducted" : "Not Hall of Fame"} • ${e.years} seasons</div>
+            </div>
+            <div class="logo">🏛️</div>
+          </div>
+          <div class="sep"></div>
+          <div class="itemCard">
+            <div class="itemTitle">${U.safe(e.name)} <span class="badge ${e.hof?"bGood":"bWarn"}">${e.hof?"HOF":"NOT HOF"}</span></div>
+            <div class="itemMeta">${U.safe(e.lastSchool)} • Legacy ${U.fmt(e.legacy)} • Retired ${e.retiredYear}</div>
+            <div class="itemMeta">W-L ${(e.career.wins||0)}-${(e.career.losses||0)} • Titles ${(e.career.titles||0)} • Tourney Wins ${(e.career.tourneyWins||0)} • FF ${(e.career.finalFours||0)}</div>
+          </div>
+          <div class="sep"></div>
+          <button class="btnGood" style="width:100%" data-act="retire_continue">Continue</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+}
+
+/* ---------- Team picker ---------- */
+function openTeamPicker(){
+  const all = S.league.teams.slice().sort((a,b)=>a.prestige-b.prestige);
+  const startOnly = !(S.flags && S.flags.startedCareer);
+  const teams = startOnly ? all.slice(0, 25) : all;
+
+  document.getElementById("app").innerHTML = `
+    <div class="card">
+      <h2>Pick Your Team</h2>
+      <div class="muted">${startOnly ? "Career start rule: Bottom 25 prestige teams only." : "Pick any team."}</div>
+      <div class="sep"></div>
+      <div class="list">
+        ${teams.map(t=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${U.safe(t.name)}</div>
+                <div class="itemMeta">${U.safe(t.conf)} • Prest ${t.prestige} • OVR ${t.ovr} • Tempo ${t.tempo}</div>
+              </div>
+              <button class="btnGood" data-act="select_team" data-team="${t.id}">Select</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="sep"></div>
+      <button data-act="close_picker">Back</button>
+    </div>
+  `;
+}
+
+/* ---------- Views ---------- */
+function renderHome(){
+  if(!S.userCoach || !S.userTeamId){
+    return `
+      <div class="grid">
+        <div class="card">
+          <h2>Create Coach</h2>
+          <label>Coach Name</label>
+          <input id="coach_name" placeholder="Your coach name"/>
+          <div class="sep"></div>
+          <button class="btnAccent" data-act="create_coach">Create Coach</button>
+          <div class="hint">After creating your coach, Team Picker opens automatically. Start must be Bottom 25 prestige.</div>
+        </div>
+
+        <div class="card">
+          <h2>Pick Team</h2>
+          <div class="muted">Career start rule: Bottom 25 prestige teams only.</div>
+          <div class="sep"></div>
+          <button class="btnGood" data-act="team_picker">Select Team</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const t = getUserTeam();
+  computeNeeds(t);
+  updatePolls("home_view");
+
+  const cap = maxStarsByPrestige(t.prestige);
+  const remain = t.recruiting.points - t.recruiting.spent;
+  const myLegacyRank = getUserLegacyRank();
+  const car = S.userCoach.career || {wins:0,losses:0,titles:0,tourneyWins:0,finalFours:0};
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <div class="rowBetween">
+          <h2>${U.safe(t.name)} Hub</h2>
+          <span class="badge bAcc">${U.safe(weekName())}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">REC</span>${t.season.w}-${t.season.l}</span>
+          <span class="chip"><span class="k">PREST</span>${t.prestige}</span>
+          <span class="chip"><span class="k">OVR</span>${t.ovr}</span>
+          <span class="chip"><span class="k">CAP</span>${cap}★</span>
+          <span class="chip"><span class="k">PTS</span>${remain}/${t.recruiting.points}</span>
+          <span class="chip"><span class="k">AP</span>${t.apRank<=25?("#"+t.apRank):"NR"}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <button class="btnAccent" data-act="advance">Advance</button>
+          <button data-act="sim">Sim</button>
+          <button data-act="tab" data-tab="bracket" ${S.post?.ncaa?"" :"disabled"}>Bracket</button>
+        </div>
+        <div class="hint">30-game season (2 per week). Option B upsets: realistic-ish. Difficulty: ${diff().toFixed(2)}x.</div>
+      </div>
+
+      <div class="card">
+        <h2>Coach + Career</h2>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">NAME</span>${U.safe(S.userCoach.name)}</span>
+          <span class="chip"><span class="k">CAREER</span>${car.wins}-${car.losses}</span>
+          <span class="chip"><span class="k">TITLES</span>${car.titles}</span>
+          <span class="chip"><span class="k">TW</span>${car.tourneyWins}</span>
+          <span class="chip"><span class="k">FF</span>${car.finalFours}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">LEGACY RANK</span>${myLegacyRank ? "#"+myLegacyRank : "—"}</span>
+          <span class="chip"><span class="k">LEGACY</span>${U.fmt(S.userCoach.legacy||coachLegacyScore(S.userCoach))}</span>
+          <span class="chip"><span class="k">SEASONS</span>${(S.userCoach.yearsCoached||0)}/35</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted mini">Phase: <b>${U.safe(S.phase)}</b></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderRankings(){
+  const t=getUserTeam();
+  if(!t) return `<div class="card"><h2>Rankings</h2><div class="muted">Pick a team first.</div></div>`;
+
+  updatePolls("rankings_view");
+  const ids = (S.polls.apTop25||[]);
+  const myId = t.id;
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>AP Top 25</h2>
+        <span class="badge bAcc">${U.safe(weekName())}</span>
+      </div>
+      <div class="sep"></div>
+      <div class="list">
+        ${ids.length ? ids.map((id,i)=>{
+          const tm=getTeam(id);
+          const hl = (id===myId) ? 'border-color: rgba(78,224,138,.55); background: rgba(78,224,138,.07);' : '';
+          const rec = `${tm.season.w}-${tm.season.l}`;
+          return `
+            <div class="itemCard" style="${hl}">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">#${i+1} ${U.safe(tm.name)} ${id===myId?'<span class="badge bGood">YOU</span>':''}</div>
+                  <div class="itemMeta">${U.safe(tm.conf)} • ${rec} • Prest ${tm.prestige} • OVR ${tm.ovr}</div>
+                </div>
+                <span class="badge bAcc">${tm.apRank<=25?("#"+tm.apRank):"NR"}</span>
+              </div>
+            </div>
+          `;
+        }).join("") : `<div class="muted">No rankings yet.</div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderCoach(){
+  const c = S.userCoach;
+  const t = getUserTeam();
+  if(!c || !t) return `<div class="card"><h2>Coach</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const xpPct = Math.round((c.xp/100)*100);
+  const xpBar = `<div class="progress"><div class="bar" style="width:${xpPct}%;"></div></div>`;
+  const car = c.career || {wins:0,losses:0,titles:0,tourneyWins:0,finalFours:0};
+
+  const blocks = ARCH.map(arch=>{
+    const nodes = (SKILL_NODES[arch]||[]).map(n=>{
+      const st = c.skillsTree[arch][n.key];
+      const cost = nodeCost(arch, n.key, st.lvl);
+      const dis = (st.lvl>=st.max) ? "disabled" : (!S.settings.infiniteSP && c.skillPoints<cost ? "disabled":"");
+      return `
+        <div class="itemCard">
+          <div class="itemTop">
+            <div>
+              <div class="itemTitle">${U.safe(n.name)} <span class="badge bAcc2">Tier ${n.tier}</span></div>
+              <div class="itemMeta">${U.safe(n.desc)} • Lv ${st.lvl}/${st.max}</div>
+            </div>
+            <button class="btnAccent" data-act="perk" data-arch="${U.safe(arch)}" data-key="${U.safe(n.key)}" ${dis}>Cost ${S.settings.infiniteSP?"∞":cost}</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    return `<div class="sep"></div><h2>${U.safe(arch)} <span class="badge bAcc2">Levels ${sumArchLevels(c,arch)}</span></h2><div class="list">${nodes}</div>`;
+  }).join("");
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>${U.safe(c.name)}</h2>
+        <div class="row">
+          <span class="chip"><span class="k">TEAM</span>${U.safe(t.name)}</span>
+          <span class="chip"><span class="k">SP</span>${S.settings.infiniteSP ? "∞" : c.skillPoints}</span>
+          <span class="chip"><span class="k">SEASONS</span>${(c.yearsCoached||0)}/35</span>
+        </div>
+        <div class="sep"></div>
+        <div class="row">
+          <span class="chip"><span class="k">CAREER</span>${car.wins}-${car.losses}</span>
+          <span class="chip"><span class="k">TITLES</span>${car.titles}</span>
+          <span class="chip"><span class="k">TW</span>${car.tourneyWins}</span>
+          <span class="chip"><span class="k">FF</span>${car.finalFours}</span>
+        </div>
+        <div class="sep"></div>
+        <div class="muted">XP</div>
+        ${xpBar}
+        <div class="muted mini">${S.settings.infiniteSP ? "∞" : (c.xp+"/100")}</div>
+        <div class="sep"></div>
+        <div class="muted mini">Legacy: <b>${U.fmt(c.legacy||coachLegacyScore(c))}</b> • Difficulty: <b>${diff().toFixed(2)}x</b></div>
+      </div>
+      <div class="card">
+        <h2>Skill Tree</h2>
+        <div class="muted mini">Perk costs scale by tier + level. XP/SP speed in Settings.</div>
+        ${blocks}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecruiting(){
+  const t = getUserTeam();
+  const c = S.userCoach;
+  if(!t || !c) return `<div class="card"><h2>Recruiting</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const open = (S.phase==="season" && S.weekIndex>=1 && S.weekIndex<=GAME.REG_WEEKS) || (S.phase==="offseason" && S.weekIndex===2);
+  if(!open) return `<div class="card"><h2>Recruiting</h2><div class="muted">Recruiting runs during the season and Offseason Wk3.</div></div>`;
+
+  computeNeeds(t);
+  const cap = maxStarsByPrestige(t.prestige);
+  const remain = t.recruiting.points - t.recruiting.spent;
+
+  const f = S.ui.recruitFilters;
+  let list = S.recruits.filter(r=>r.stage==="open");
+
+  if((f.board||"all")==="targets"){
+    const offeredIds = new Set((t.recruiting.offered||[]));
+    list = list.filter(r=>offeredIds.has(r.id));
+  }
+
+  if(S.settings.hideLockedRecruits){
+    list = list.filter(r=>canRecruitByPrestige(t, r));
+  }
+  if(f.pos) list = list.filter(r=>r.pos===f.pos);
+  if(f.state) list = list.filter(r=>r.state===f.state);
+  if(f.stars) list = list.filter(r=>r.stars>=parseInt(f.stars,10));
+
+  if(f.sort==="ovr") list.sort((a,b)=>b.ovr-a.ovr);
+  else if(f.sort==="stars") list.sort((a,b)=>b.stars-a.stars || b.ovr-a.ovr);
+  else {
+    list.sort((a,b)=>{
+      const ra = rankTeams(a).findIndex(x=>x.id===t.id)+1;
+      const rb = rankTeams(b).findIndex(x=>x.id===t.id)+1;
+      return ra-rb;
+    });
+  }
+  list = list.slice(0, 90);
+
+  const needsBadges = GAME.POS.map(p=>{
+    const n=t.needs[p]||0;
+    const cls = n>=2 ? "bBad" : (n===1 ? "bWarn" : "bGood");
+    return `<span class="badge ${cls}">${p}: ${n}</span>`;
+  }).join(" ");
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Recruiting Board</h2>
+        <span class="badge bAcc">Cap ${cap}★ • Pts ${remain}/${t.recruiting.points} • Class ${t.recruiting.commits.length}/${GAME.CLASS_SLOTS}</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="itemCard">
+        <div class="itemTitle">Team Needs</div>
+        <div class="itemMeta">${needsBadges}</div>
+        <div class="hint">Needs are shown here so you don’t have to bounce to Roster.</div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>Position</label>
+          <select id="rf_pos">
+            <option value="">All</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${f.pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>State</label>
+          <select id="rf_state">
+            <option value="">All</option>
+            ${GAME.STATES.map(s=>`<option value="${s}" ${f.state===s?"selected":""}>${s}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Min Stars</label>
+          <select id="rf_stars">
+            <option value="">Any</option>
+            ${[1,2,3,4,5].map(x=>`<option value="${x}" ${f.stars==x?"selected":""}>${x}★+</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <label>Sort</label>
+          <select id="rf_sort">
+            <option value="rank" ${f.sort==="rank"?"selected":""}>Your Rank</option>
+            <option value="ovr" ${f.sort==="ovr"?"selected":""}>OVR</option>
+            <option value="stars" ${f.sort==="stars"?"selected":""}>Stars</option>
+          </select>
+        </div>
+        <div>
+          <label>Board</label>
+          <select id="rf_board">
+            <option value="all" ${(f.board||"all")==="all"?"selected":""}>All</option>
+            <option value="targets" ${(f.board||"all")==="targets"?"selected":""}>Targets (Offered)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button class="btnAccent" data-act="rf_apply">Apply</button>
+        <button data-act="rf_clear">Clear</button>
+      </div>
+
+      <div class="sep"></div>
+      <div class="list">
+        ${list.map(r=>{
+          const locked = !canRecruitByPrestige(t, r);
+          const offered = hasUserOffer(t, r);
+          const myInt = interest(r, t);
+          const ranked = rankTeams(r);
+          const myRank = ranked.findIndex(x=>x.id===t.id)+1;
+          const leader = getTeam(ranked[0].id)?.name || "—";
+          const need = (t.needs?.[r.pos]||0) > 0;
+          const needBadge = need ? `<span class="badge bWarn">NEED</span>` : ``;
+          const canVisit = offered && !locked && remain>=ACTIONS.visit.cost && !r.visitedBy?.[t.id] && r.visitScheduled?.[t.id]==null;
+          const visitLabel = r.visitedBy?.[t.id] ? "Visited" : (r.visitScheduled?.[t.id]!=null ? `Scheduled` : "Visit");
+
+          return `
+            <div class="itemCard" style="${locked && !r.openToAll ? 'opacity:.78;' : ''}">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">
+                    ${"★".repeat(r.stars)}
+                    ${r.openToAll?`<span class="badge bGood">OPEN</span>`:""}
+                    <span class="badge bAcc">OVR ${r.ovr}</span>
+                    ${needBadge}
+                    ${U.safe(r.name)}
+                  </div>
+                  <div class="itemMeta">
+                    ${r.pos} • ${r.state} • Your Rank #${myRank} • Leader: ${U.safe(leader)}
+                  </div>
+                  ${locked && !r.openToAll ? `<div class="itemMeta"><span class="badge bBad">LOCKED (Cap ${cap}★)</span></div>` : ``}
+                </div>
+              </div>
+
+              <div style="margin-top:8px">
+                <div class="progress"><div class="bar" style="width:${myInt}%;"></div></div>
+                <div class="itemMeta">Interest: ${myInt}/100</div>
+              </div>
+
+              <div class="actionLine">
+                <button data-act="offer" data-id="${r.id}" ${offered || locked || !canOfferRecruit(t) ? "disabled":""}>${offered?"Offered":"Offer"}</button>
+                <button class="btnAccent" data-act="sell" data-id="${r.id}" data-kind="soft" ${locked||remain<ACTIONS.soft.cost?"disabled":""}>Soft</button>
+                <button class="btnWarn" data-act="sell" data-id="${r.id}" data-kind="hard" ${locked||remain<ACTIONS.hard.cost?"disabled":""}>Hard</button>
+                <button data-act="sell" data-id="${r.id}" data-kind="sway" ${locked||remain<ACTIONS.sway.cost?"disabled":""}>Sway</button>
+                <button class="btnGood" data-act="sell" data-id="${r.id}" data-kind="visit" ${canVisit?"":"disabled"}>${visitLabel}</button>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderJobs(){
+  const t=getUserTeam(), c=S.userCoach;
+  if(!t||!c) return `<div class="card"><h2>Jobs</h2><div class="muted">Finish setup first.</div></div>`;
+
+  const open = (S.phase==="offseason" && S.weekIndex===1);
+  if(!open) return `<div class="card"><h2>Jobs</h2><div class="muted">Job carousel appears Offseason Wk1.</div></div>`;
+
+  const offers = S.jobs.offers || [];
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>Job Carousel</h2>
+        <span class="badge bAcc">Realistic rebuild offers</span>
+      </div>
+      <div class="sep"></div>
+      <div class="list">
+        ${offers.map(o=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div>
+                <div class="itemTitle">${U.safe(o.teamName)} <span class="badge bAcc2">${U.safe(o.conf)}</span></div>
+                <div class="itemMeta">Prest ${o.prestige} • $${o.contract.salaryM}M • ${o.contract.years}y • Buyout $${o.contract.buyoutM}M</div>
+              </div>
+              <button class="btnGood" data-act="accept_job" data-id="${o.id}">Accept</button>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+      <div class="hint">Hard rebuild realism: you can’t skip tiers without real tournament success.</div>
+    </div>
+  `;
+}
+
+function renderRoster(){
+  const t = getUserTeam();
+  if(!t) return `<div class="card"><h2>Roster</h2><div class="muted">Pick a team first.</div></div>`;
+  computeNeeds(t);
+
+  const pos = S.ui.rosterPos || "";
+  let rows = t.roster.slice();
+  if(pos) rows = rows.filter(p=>p.pos===pos);
+  rows.sort((a,b)=>a.pos.localeCompare(b.pos)||b.ovr-a.ovr);
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>${U.safe(t.name)} Roster</h2>
+        <span class="badge bAcc">Roster ${t.roster.length}/13 • Avg OVR ${teamAvgOVR(t)}</span>
+      </div>
+
+      <div class="sep"></div>
+      <div class="twoCol">
+        <div>
+          <label>View by Position</label>
+          <select id="rv_pos">
+            <option value="">All Positions</option>
+            ${GAME.POS.map(p=>`<option value="${p}" ${pos===p?"selected":""}>${p}</option>`).join("")}
+          </select>
+          <div class="row" style="margin-top:10px">
+            <button class="btnAccent" data-act="rv_apply">Apply</button>
+            <button data-act="rv_clear">Clear</button>
+          </div>
+        </div>
+        <div>
+          <label>Team Needs</label>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:8px;">
+            ${GAME.POS.map(p=>{
+              const n = t.needs[p]||0;
+              const cls = n>=2 ? "bBad" : (n>=1 ? "bWarn" : "bGood");
+              return `<span class="badge ${cls}">${p}: ${n}</span>`;
+            }).join(" ")}
+          </div>
+        </div>
+      </div>
+
+      <div class="sep"></div>
+      <div class="list">
+        ${rows.map(p=>{
+          ensureStats(p);
+          return `
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle"><span class="badge bAcc2">${p.pos}</span> <span class="badge bAcc">OVR ${p.ovr}</span> ${U.safe(p.name)}</div>
+                  <div class="itemMeta">${p.year}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderSchedule(){
+  const t = getUserTeam();
+  if(!t) return `<div class="card"><h2>Schedule</h2><div class="muted">Pick a team first.</div></div>`;
+
+  const items=[];
+  for(let w=1; w<=GAME.REG_WEEKS; w++){
+    const sched = S.league.schedule[w-1];
+    const games = (sched?.games||[]).filter(x=>x.home===t.id || x.away===t.id);
+    if(!games.length){
+      items.push({w, opp:"BYE", res:"—"});
+      continue;
+    }
+    for(let i=0;i<games.length;i++){
+      const g=games[i];
+      const home=getTeam(g.home), away=getTeam(g.away);
+      const opp = (g.home===t.id) ? `${away.name} (H)` : `${home.name} (A)`;
+      const res = g.played ? ((g.home===t.id)? `${g.scoreH}-${g.scoreA}` : `${g.scoreA}-${g.scoreH}`) : "—";
+      items.push({w, opp, res, conf:g.confGame});
+    }
+  }
+  return `
+    <div class="card">
+      <h2>${U.safe(t.name)} Schedule</h2>
+      <div class="sep"></div>
+      <div class="list">
+        ${items.map(x=>`
+          <div class="itemCard">
+            <div class="itemTop">
+              <div class="itemTitle">Week ${x.w}</div>
+              <span class="badge ${x.conf?"bAcc2":"bAcc"}">${U.safe(x.res)}</span>
+            </div>
+            <div class="itemMeta">${U.safe(x.opp)} ${x.conf?`• <span class="badge bAcc2">CONF</span>`:""}</div>
+          </div>
+        `).join("")}
+        <div class="itemCard">
+          <div class="itemTitle">Postseason</div>
+          <div class="itemMeta">Week 16: Conference Tournaments • Week 17: Selection • NCAA: First Four → Title</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderBracket(){
+  if(!S.post?.ncaa) return `<div class="card"><h2>Bracket</h2><div class="muted">No tournament bracket yet.</div></div>`;
+
+  const N = S.post.ncaa;
+  const my = getUserTeam();
+  const myId = my?.id;
+
+  const regions = N.regions || [];
+  const regionSlots = N.regionSlots || {};
+
+  function slotLabel(slot){
+    if(!slot) return "—";
+    if(slot.source==="playin"){
+      const p=slot.playin;
+      const A=getTeam(p.a)?.name||"—";
+      const B=getTeam(p.b)?.name||"—";
+      const winner = resolvePlayInSlot(slot);
+      if(winner){
+        return `${getTeam(winner).name}`;
+      }
+      return `Winner of ${A} / ${B}`;
+    }
+    return getTeam(slot.teamId)?.name || "—";
+  }
+
+  // Map R64 results to quick lookup
+  const r64 = (N.rounds?.r64||[]);
+  const resMap = new Map();
+  for(const m of r64){
+    const aId = (m.a?.source==="playin") ? null : m.a?.teamId;
+    const bId = (m.b?.source==="playin") ? null : m.b?.teamId;
+    const key = `${m.region}|${m.a?.seed}v${m.b?.seed}|${m.a?.teamId}|${m.b?.teamId}`;
+    if(m.res) resMap.set(key, m.res);
+  }
+
+  return `
+    <div class="card">
+      <div class="rowBetween">
+        <h2>NCAA Bracket (68)</h2>
+        <span class="badge bAcc">${U.safe(weekName())}</span>
+      </div>
+      <div class="hint">This is the live bracket view. Your team is highlighted when visible.</div>
+      <div class="sep"></div>
+
+      <div class="itemCard">
+        <div class="itemTitle">First Four</div>
+        <div class="itemMeta">
+          ${N.playIn16.map(m=>{
+            const A=getTeam(m.a)?.name||"—", B=getTeam(m.b)?.name||"—";
+            const line = m.res ? `${A} ${m.res.h}-${m.res.a} ${B}` : `${A} vs ${B}`;
+            return `<span class="badge bAcc2">16: ${U.safe(line)}</span>`;
+          }).join(" ")}
+        </div>
+        <div class="itemMeta">
+          ${N.playIn11.map(m=>{
+            const A=getTeam(m.a)?.name||"—", B=getTeam(m.b)?.name||"—";
+            const line = m.res ? `${A} ${m.res.h}-${m.res.a} ${B}` : `${A} vs ${B}`;
+            return `<span class="badge bAcc2">11: ${U.safe(line)}</span>`;
+          }).join(" ")}
+        </div>
+      </div>
+
+      <div class="sep"></div>
+
+      <div class="brGrid">
+        ${regions.map(reg=>{
+          const slots = (regionSlots[reg]||[]).slice().sort((a,b)=>a.seed-b.seed);
+          const seedMap = new Map(slots.map(s=>[s.seed,s]));
+          const pairs = [[1,16],[8,9],[5,12],[4,13],[6,11],[3,14],[7,10],[2,15]];
+
+          const matches = pairs.map(([aS,bS])=>{
+            const A = seedMap.get(aS);
+            const B = seedMap.get(bS);
+            const aName = slotLabel(A);
+            const bName = slotLabel(B);
+            const aId = (A?.source==="playin") ? resolvePlayInSlot(A) : A?.teamId;
+            const bId = (B?.source==="playin") ? resolvePlayInSlot(B) : B?.teamId;
+
+            const aYou = (aId && myId && aId===myId);
+            const bYou = (bId && myId && bId===myId);
+
+            const played = (A && B && N.rounds?.r64?.some(m=>{
+              const ra = (m.a?.seed===aS && m.b?.seed===bS && m.region===reg);
+              const rb = (m.a?.seed===bS && m.b?.seed===aS && m.region===reg);
+              return ra || rb;
+            }));
+
+            return `
+              <div class="match">
+                <div class="teamLine ${aYou?'you':''}">
+                  <div><span class="seed">(${aS})</span> ${U.safe(aName)}</div>
+                </div>
+                <div class="teamLine ${bYou?'you':''}" style="margin-top:4px;">
+                  <div><span class="seed">(${bS})</span> ${U.safe(bName)}</div>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          return `
+            <div class="regionCard">
+              <div class="itemTitle">${U.safe(reg)}</div>
+              <div class="itemMeta">Round of 64 matchups</div>
+              ${matches}
+            </div>
+          `;
+        }).join("")}
+      </div>
+    </div>
+  `;
+}
+
+function renderRecords(){
+  const t=getUserTeam(), c=S.userCoach;
+  if(!t||!c) return `<div class="card"><h2>Records</h2><div class="muted">Finish setup first.</div></div>`;
+
+  rebuildLegacyLeaderboard();
+  const legacy=S.records.legacy||[];
+  const myRank=getUserLegacyRank();
+  const top50=legacy.slice(0,50);
+  const hof=(S.records.hallOfFame||[]).slice().sort((a,b)=>(b.legacy-a.legacy)).slice(0,50);
+
+  return `
+    <div class="grid">
+      <div class="card">
+        <h2>Legacy Leaderboard (Top 50)</h2>
+        <div class="sep"></div>
+        <div class="list">
+          ${top50.map((x,i)=>`
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">#${i+1} ${U.safe(x.name)} ${x.user?'<span class="badge bGood">YOU</span>':''}</div>
+                  <div class="itemMeta">${U.safe(x.school)} • ${U.safe(x.note||"")}</div>
+                </div>
+                <span class="badge ${x.user?"bGood":"bAcc"}">${U.fmt(x.legacy)}</span>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+
+        ${myRank ? `<div class="sep"></div><div class="muted mini">Your rank: <b>#${myRank}</b></div>` : ``}
+      </div>
+
+      <div class="card">
+        <h2>Hall of Fame</h2>
+        <div class="muted mini">Forced retirement at 35 seasons. Hardline requirements only.</div>
+        <div class="sep"></div>
+        <div class="itemCard">
+          <div class="itemTitle">HOF Requirements (ANY one qualifies)</div>
+          <div class="itemMeta">${HOF_RULES.map(r=>`<span class="badge bAcc2">${U.safe(r.label)}</span>`).join(" ")}</div>
+        </div>
+        <div class="sep"></div>
+        <div class="list">
+          ${hof.length ? hof.map(x=>`
+            <div class="itemCard">
+              <div class="itemTop">
+                <div>
+                  <div class="itemTitle">${U.safe(x.name)} ${x.user?'<span class="badge bGood">YOU</span>':''} <span class="badge bGood">HOF</span></div>
+                  <div class="itemMeta">${U.safe(x.lastSchool||x.school||"—")} • Legacy ${U.fmt(x.legacy)} • Retired ${x.retiredYear||"—"}</div>
+                  <div class="itemMeta">W-L ${(x.career?.wins||0)}-${(x.career?.losses||0)} • Titles ${(x.career?.titles||0)} • Tourney Wins ${(x.career?.tourneyWins||0)} • FF ${(x.career?.finalFours||0)}</div>
+                </div>
+              </div>
+            </div>
+          `).join("") : `<div class="muted">No inductees yet.</div>`}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSettings(){
+  const s = S.settings || {};
+  return `
+    <div class="card">
+      <h2>Settings</h2>
+      <div class="sep"></div>
+
+      <label>XP Gain Speed</label>
+      <select id="set_xp">
+        ${[0.5,1,2,3,4].map(v=>`<option value="${v}" ${parseFloat(s.xpSpeed||1)==v?"selected":""}>${v}x</option>`).join("")}
+      </select>
+
+      <label>Skill Point Earn Rate</label>
+      <select id="set_sp">
+        ${[0.5,1,2,3,4].map(v=>`<option value="${v}" ${parseFloat(s.spRate||1)==v?"selected":""}>${v}x</option>`).join("")}
+      </select>
+
+      <label>Infinite Skill Points</label>
+      <select id="set_inf">
+        <option value="0" ${!s.infiniteSP?"selected":""}>Off</option>
+        <option value="1" ${s.infiniteSP?"selected":""}>On</option>
+      </select>
+
+      <label>Hide Recruits Locked by Prestige Cap</label>
+      <select id="set_hide">
+        <option value="0" ${!s.hideLockedRecruits?"selected":""}>Off (Show locked)</option>
+        <option value="1" ${s.hideLockedRecruits?"selected":""}>On (Hide locked)</option>
+      </select>
+
+      <label>Difficulty</label>
+      <select id="set_diff">
+        <option value="0.90" ${parseFloat(s.difficulty||1)==0.90?"selected":""}>Easier (0.90x)</option>
+        <option value="1.00" ${parseFloat(s.difficulty||1)==1.00?"selected":""}>Normal (1.00x)</option>
+        <option value="1.05" ${parseFloat(s.difficulty||1)==1.05?"selected":""}>Challenging (1.05x)</option>
+        <option value="1.15" ${parseFloat(s.difficulty||1)==1.15?"selected":""}>Hard (1.15x)</option>
+        <option value="1.25" ${parseFloat(s.difficulty||1)==1.25?"selected":""}>Brutal (1.25x)</option>
+      </select>
+      <div class="hint">Difficulty scales recruiting odds and randomness. Tournament RNG stays tighter.</div>
+
+      <div class="sep"></div>
+      <button class="btnAccent" data-act="save_settings">Save Settings</button>
+
+      <div class="sep"></div>
+      <div class="muted mini">
+        Prestige cap: <b>&lt;55 = 3★</b>, <b>55–69 = 4★</b>, <b>70+ = 5★</b>. “OPEN” bypasses.
+      </div>
+    </div>
+  `;
+}
+
+/* ---------- Render ---------- */
+function render(){
+  updateSubline();
+  renderDrawerNav();
+  const app = document.getElementById("app");
+
+  if(!S){
+    app.innerHTML = `
+      <div class="card">
+        <h2>Welcome</h2>
+        <div class="muted">No save found. Start a new dynasty.</div>
+        <div class="sep"></div>
+        <button class="btnAccent" data-act="new_game">New Game</button>
+        <button data-act="load">Load Save</button>
+      </div>
+    `;
+    renderOverlay();
+    return;
+  }
+
+  const view = ({
+    home: renderHome,
+    rankings: renderRankings,
+    coach: renderCoach,
+    recruit: renderRecruiting,
+    jobs: renderJobs,
+    schedule: renderSchedule,
+    roster: renderRoster,
+    bracket: renderBracket,
+    records: renderRecords,
+    settings: renderSettings,
+  }[activeTab] || renderHome)();
+
+  app.innerHTML = view;
+  renderOverlay();
+}
+
+/* ---------- Actions ---------- */
+async function handle(act, el){
+  try{
+    if(act==="drawer_open"){ drawerOpen(); return; }
+    if(act==="drawer_close"){ drawerClose(); return; }
+
+    if(act==="new_game"){ newGame(); await save(); toast("New Game","Dynasty created.","good"); render(); return; }
+    if(act==="load"){
+      const v=await loadSave();
+      if(!v){toast("No Save","No save found.","bad");return;}
+      S=v;
+
+      // backfill
+      S.settings ??= { hideLockedRecruits:false, xpSpeed:1, spRate:1, infiniteSP:false, difficulty:1.05 };
+      S.records ??= buildInitialRecords();
+      S.polls ??= { apTop25:[], lastReason:"" };
+      S.jobs ??= { offers: [] };
+      S.post ??= { confTourneys:[], ncaa:null };
+      S.ui ??= { modalQueue:[], rosterPos:"", recruitFilters:{pos:"",state:"",stars:"",sort:"rank",board:"all"}, rankingView:"ap" };
+
+      updatePolls("load");
+      toast("Loaded","Save loaded.","good");
+      render(); return;
+    }
+
+    if(act==="save"){ await save(); toast("Saved","Saved.","good"); render(); return; }
+    if(act==="hard_reset"){ await hardReset(); toast("Reset","Save deleted.","warn"); render(); return; }
+
+    if(act==="tab"){ activeTab = el.dataset.tab; drawerClose(); render(); return; }
+
+    if(act==="modal_ack"){ clearModal(); await save(); render(); return; }
+
+    if(act==="retire_continue"){
+      clearModal();
+      S.userCoach=null;
+      S.userTeamId=null;
+      S.phase="setup";
+      S.weekIndex=0;
+      toast("New Career","Create a new coach to continue this world.","good");
+      await save(); render(); return;
+    }
+
+    if(act==="create_coach"){
+      const name = (document.getElementById("coach_name")?.value||"").trim() || ("Coach " + U.pick(NAME.coachLast));
+      S.userCoach = makeCoach({name});
+      toast("Coach Created", `${S.userCoach.name} (HC)`, "good");
+      await save();
+      openTeamPicker();
+      return;
+    }
+
+    if(act==="team_picker"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      openTeamPicker();
+      return;
+    }
+    if(act==="close_picker"){ render(); return; }
+
+    if(act==="select_team"){
+      if(!S.userCoach) return toast("Coach Required","Create coach first.","bad");
+      const team = getTeam(el.dataset.team);
+
+      const startOnly = !(S.flags && S.flags.startedCareer);
+      if(startOnly){
+        const bottom25 = S.league.teams.slice().sort((a,b)=>a.prestige-b.prestige).slice(0,25);
+        const ok = bottom25.some(x=>x.id===team.id);
+        if(!ok) return toast("Bottom 25 Rule","You must start with a Bottom 25 prestige team.","bad");
+      }
+
+      S.userTeamId = team.id;
+      placeUserCoachOnTeam(team, S.userCoach);
+      team.staff.HC = S.userCoach;
+
+      S.phase = "season";
+      S.weekIndex = 0;
+      S.flags.startedCareer = true;
+
+      resetForNewSeason();
+      updatePolls("team_selected");
+      toast("Team Selected", `${team.name} • HC`, "good");
+      await save(); render(); return;
+    }
+
+    if(act==="advance" || act==="sim"){ advance(); await save(); render(); return; }
+
+    if(act==="perk"){
+      upgradeNode(S.userCoach, el.dataset.arch, el.dataset.key);
+      await save(); render(); return;
+    }
+
+    if(act==="offer"){ offerRecruit(el.dataset.id); await save(); render(); return; }
+    if(act==="sell"){
+      const t = getUserTeam();
+      const r = S.recruits.find(x=>x.id===el.dataset.id);
+      if(!t || !r) return;
+      applyRecruitAction(t, S.userCoach, r, el.dataset.kind);
+      await save(); render(); return;
+    }
+
+    if(act==="visit_confirm"){
+      const t = getUserTeam();
+      const rid = el.dataset.rid;
+      const r = S.recruits.find(x=>x.id===rid);
+      if(!t || !r) return;
+
+      const wk = parseInt(document.getElementById("visit_week_sel")?.value||"", 10);
+      const cost = ACTIONS.visit.cost;
+
+      const avail = t.recruiting.points - t.recruiting.spent;
+      if(cost > avail) return toast("No Points", `Only ${avail} left.`, "bad");
+
+      t.recruiting.spent += cost;
+      r.visitScheduled[t.id] = wk;
+
+      toast("Visit Scheduled", `${r.name}`, "good");
+      clearModal();
+      await save(); render(); return;
+    }
+
+    if(act==="rf_apply"){
+      S.ui.recruitFilters.pos = document.getElementById("rf_pos")?.value||"";
+      S.ui.recruitFilters.state = document.getElementById("rf_state")?.value||"";
+      S.ui.recruitFilters.stars = document.getElementById("rf_stars")?.value||"";
+      S.ui.recruitFilters.sort = document.getElementById("rf_sort")?.value||"rank";
+      S.ui.recruitFilters.board = document.getElementById("rf_board")?.value || "all";
+      await save(); render(); return;
+    }
+    if(act==="rf_clear"){
+      S.ui.recruitFilters = {pos:"",state:"",stars:"",sort:"rank",board:"all"};
+      await save(); render(); return;
+    }
+
+    if(act==="accept_job"){
+      acceptJob(el.dataset.id);
+      await save(); render(); return;
+    }
+
+    if(act==="rv_apply"){ S.ui.rosterPos = document.getElementById("rv_pos")?.value||""; await save(); render(); return; }
+    if(act==="rv_clear"){ S.ui.rosterPos = ""; await save(); render(); return; }
+
+    if(act==="save_settings"){
+      S.settings.xpSpeed = parseFloat(document.getElementById("set_xp")?.value||"1");
+      S.settings.spRate = parseFloat(document.getElementById("set_sp")?.value||"1");
+      S.settings.infiniteSP = (document.getElementById("set_inf")?.value==="1");
+      S.settings.hideLockedRecruits = (document.getElementById("set_hide")?.value==="1");
+      S.settings.difficulty = parseFloat(document.getElementById("set_diff")?.value||"1.05");
+      toast("Settings Saved","Applied.", "good");
+      await save(); render(); return;
+    }
+
+  }catch(e){
+    console.error(e);
+    toast("Runtime Error", e?.message || "Unknown error", "bad");
+  }
+}
+
+/* ---------- Click routing ---------- */
+document.addEventListener("click", (e)=>{
+  const bg = e.target?.id==="drawer" ? e.target : null;
+  if(bg && bg.classList.contains("drawerOverlay") && bg.classList.contains("open")){
+    if(e.target === bg) drawerClose();
+    return;
+  }
+  const el = e.target.closest("[data-act]");
+  if(!el) return;
+  handle(el.dataset.act, el);
+});
+
+/* ---------- Boot ---------- */
+(async function boot(){
+  const loaded = await loadSave();
+  if(loaded) S = loaded;
+
+  if(S){
+    S.settings ??= { hideLockedRecruits:false, xpSpeed:1, spRate:1, infiniteSP:false, difficulty:1.05 };
+    S.records ??= buildInitialRecords();
+    S.polls ??= { apTop25:[], lastReason:"" };
+    S.jobs ??= { offers: [] };
+    S.post ??= { confTourneys:[], ncaa:null };
+    S.ui ??= { modalQueue:[], rosterPos:"", recruitFilters:{pos:"",state:"",stars:"",sort:"rank",board:"all"}, rankingView:"ap" };
+
+    updatePolls("boot");
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
