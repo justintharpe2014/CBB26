@@ -1,0 +1,53 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10233b">
+  <title>Saturday Dynasty</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <h1>🏈 SATURDAY DYNASTY</h1>
+      <small id="sub">College Football Dynasty Manager</small>
+    </div>
+    <div>
+      <button onclick="runAudit()">Audit</button>
+      <button onclick="save()">Save</button>
+      <button onclick="exportSave()">Export</button>
+      <button onclick="document.getElementById('upload').click()">Import</button>
+      <input
+        hidden
+        id="upload"
+        type="file"
+        accept=".json"
+        onchange="importSave(this)"
+      >
+      <button onclick="startNewDynasty()">New Dynasty</button>
+    </div>
+  </header>
+
+  <nav id="nav"></nav>
+  <main id="main"></main>
+
+  <dialog id="modal"></dialog>
+  <dialog id="spotlight"></dialog>
+
+  <script src="./data.js"></script>
+  <script src="./core.js"></script>
+  <script src="./coaches.js"></script>
+  <script src="./rivalries.js"></script>
+  <script src="./simulation.js"></script>
+  <script src="./presentation.js"></script>
+  <script src="./depth.js"></script>
+  <script src="./needs.js"></script>
+  <script src="./abilities.js"></script>
+  <script src="./career-goals.js"></script>
+  <script src="./final-integration.js"></script>
+  <script src="./performance-and-tiers.js"></script>
+  <script src="./startup.js"></script>
+</body>
+</html>
