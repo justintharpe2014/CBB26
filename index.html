@@ -1,24 +1,58 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#10233b">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <meta
+    name="theme-color"
+    content="#10233b"
+  >
+
   <title>Saturday Dynasty</title>
-  <link rel="stylesheet" href="./style.css">
+
+  <link
+    rel="stylesheet"
+    href="./style.css"
+  >
 </head>
+
 <body>
+
   <header>
     <div>
       <h1>🏈 SATURDAY DYNASTY</h1>
-      <small id="sub">College Football Dynasty Manager</small>
+
+      <small id="sub">
+        College Football Dynasty Manager
+      </small>
     </div>
+
     <div>
-      <button onclick="runAudit()">Audit</button>
-      <button onclick="save()">Save</button>
-      <button onclick="exportSave()">Export</button>
-      <button onclick="document.getElementById('upload').click()">Import</button>
+      <button onclick="runAudit()">
+        Audit
+      </button>
+
+      <button onclick="save()">
+        Save
+      </button>
+
+      <button onclick="exportSave()">
+        Export
+      </button>
+
+      <button onclick="
+        document.getElementById('upload').click()
+      ">
+        Import
+      </button>
+
       <input
         hidden
         id="upload"
@@ -26,28 +60,52 @@
         accept=".json"
         onchange="importSave(this)"
       >
-      <button onclick="startNewDynasty()">New Dynasty</button>
+
+      <button onclick="startNewDynasty()">
+        New Dynasty
+      </button>
     </div>
   </header>
 
   <nav id="nav"></nav>
+
   <main id="main"></main>
 
   <dialog id="modal"></dialog>
+
   <dialog id="spotlight"></dialog>
+
+  <!-- Base game data and simulation -->
 
   <script src="./data.js"></script>
   <script src="./core.js"></script>
   <script src="./coaches.js"></script>
   <script src="./rivalries.js"></script>
   <script src="./simulation.js"></script>
+
+  <!-- Game interface -->
+
   <script src="./presentation.js"></script>
   <script src="./depth.js"></script>
   <script src="./needs.js"></script>
+
+  <!-- Coaching systems -->
+
   <script src="./abilities.js"></script>
   <script src="./career-goals.js"></script>
   <script src="./final-integration.js"></script>
+
+  <!-- Diagnostics -->
+
   <script src="./performance-and-tiers.js"></script>
+
+  <!-- New coaching career system -->
+
+  <script src="./career-mode.js"></script>
+
+  <!-- Startup must always load last -->
+
   <script src="./startup.js"></script>
+
 </body>
 </html>
