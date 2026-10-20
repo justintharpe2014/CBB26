@@ -75,6 +75,31 @@
 
   <dialog id="spotlight"></dialog>
 
+<button
+  style="margin:12px;padding:12px"
+  onclick="
+    alert(
+      'Development function: ' +
+      typeof sdDevelopment +
+      '\nRepair loaded: ' +
+      (typeof render === 'function') +
+      '\nCurrent tab: ' + tab
+    );
+    try {
+      const html = sdDevelopment();
+      alert(
+        'Development generated ' +
+        html.length +
+        ' characters.'
+      );
+    } catch (e) {
+      alert('ERROR: ' + e.message);
+    }
+  "
+>
+  TEST DEVELOPMENT ENGINE
+</button>
+
   <!-- Base game data and simulation -->
 
   <script src="./data.js"></script>
