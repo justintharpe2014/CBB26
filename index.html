@@ -74,7 +74,32 @@
   <dialog id="modal"></dialog>
 
   <dialog id="spotlight"></dialog>
-<button onclick="alert('TEST WORKS')">
+
+<button onclick="
+  try {
+    const output = sdDevelopment();
+
+    alert(
+      'Development generated ' +
+      output.length +
+      ' characters of content.'
+    );
+
+    document.getElementById('main').innerHTML =
+      output;
+
+    tab = 'Player Development';
+
+  } catch (error) {
+    alert(
+      'DEVELOPMENT ERROR: ' +
+      error.message
+    );
+  }
+">
+  TEST DEVELOPMENT ENGINE
+</button>
+
   TEST DEVELOPMENT ENGINE
 </button>
 
