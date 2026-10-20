@@ -398,22 +398,24 @@ function sdDevelopment() {
       your dynasty.
     </p>
 
+    
     <div class="grid">
-      ${box(
-        "Training Slots",
-        active.length + "/3"
-      )}
+      <div class="card">
+        <small>Training Slots</small>
+        <h2>${active.length}/3</h2>
+      </div>
 
-      ${box(
-        "Players Improved",
-        developedPlayers
-      )}
+      <div class="card">
+        <small>Players Improved</small>
+        <h2>${developedPlayers}</h2>
+      </div>
 
-      ${box(
-        "OVR Gained This Year",
-        totalGrowth
-      )}
+      <div class="card">
+        <small>OVR Gained This Year</small>
+        <h2>${totalGrowth}</h2>
+      </div>
     </div>
+
 
     <h3>Active Development Plans</h3>
   `;
