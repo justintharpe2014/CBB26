@@ -67,32 +67,6 @@
 
   <main id="main"></main>
 
-  <dialog id="modal"></dialog>
-
-  <dialog id="spotlight"></dialog>
-
-<button onclick="
-  try {
-    const output = sdDevelopment();
-
-    alert(
-      'Development generated ' +
-      output.length +
-      ' characters of content.'
-    );
-
-    document.getElementById('main').innerHTML =
-      output;
-
-    tab = 'Player Development';
-
-  } catch (error) {
-    alert(
-      'DEVELOPMENT ERROR: ' +
-      error.message
-    );
-  }
-">
   
 
   <!-- Base game data and simulation -->
@@ -120,11 +94,9 @@
   <script src="./performance-and-tiers.js"></script>
 
   <!-- New coaching career system -->
-
-  
-<script src="./career-mode.js"></script>
+ <script src="./career-mode.js"></script>
 <script src="./development-fix.js?v=2"></script>
-<script src="./player-development-v2.js?v=1"></script>
+<script src="./player-development-v2.js?v=3"></script>
 <script src="./postseason-ui.js?v=2"></script>
 <script src="./clean-ui.js?v=1"></script>
 <script src="./office-upgrade.js?v=1"></script>
